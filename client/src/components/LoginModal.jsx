@@ -180,9 +180,8 @@ const LoginModal = ({ isOpen, onClose, role }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full px-[20px] py-[10px] rounded-[10px] font-semibold text-[0.875rem] text-[#FFFFFF] shadow-sm transition-[background-color,shadow] duration-180 flex items-center justify-center gap-3 ${
-                loading ? 'bg-[#9E9E9E] cursor-not-allowed' : 'bg-[#246427] hover:bg-[#1a4d1c] hover:shadow'
-              }`}
+              className={`w-full px-[20px] py-[10px] rounded-[10px] font-semibold text-[0.875rem] text-[#FFFFFF] shadow-sm transition-[background-color,shadow] duration-180 flex items-center justify-center gap-3 ${loading ? 'bg-[#9E9E9E] cursor-not-allowed' : 'bg-[#246427] hover:bg-[#1a4d1c] hover:shadow'
+                }`}
             >
               {loading ? (
                 <>
