@@ -262,13 +262,17 @@ Open three separate terminal windows:
 
 ## 📸 Screenshots
 
-> Add screenshots here after running the application. Suggested screens to capture:
-> - Landing page hero section
-> - Worker Dashboard with task cards and attendance status
-> - Mark Attendance wizard (GPS → Face → Photo steps)
-> - Team Lead Dashboard with stats cards
-> - Create Task form (multi-step with conflict detection)
-> - Admin Dashboard with Chart.js analytics panels
+### 🏠 Landing Page
+![Sahayog Landing Page](D:\SheSolve\1.jepg)
+
+### 👷 Worker Dashboard
+![Worker Dashboard](D:\SheSolve\2.jepg)
+
+### 📍 Team Lead Dashboard
+![Mark Attendance](D:\SheSolve\3.jepg)
+
+### 📊 Admin Dashboard
+![Admin Dashboard](D:\SheSolve\4.jepg)
 
 ---
 
