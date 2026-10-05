@@ -274,3 +274,4 @@ def verify_face():
 
 if __name__ == "__main__":
     app.run(port=5001, debug=True)
+# Biometric recognition service end
