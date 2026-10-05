@@ -1,0 +1,20 @@
+# Real face recognition requires running this service with Python 3.10.x on Windows.
+# Install/run with: py -3.10 -m pip install -r requirements.txt
+flask
+flask-cors
+numpy
+Pillow
+requests
+python-dotenv
+pymongo
+dnspython
+blinker
+click
+itsdangerous
+jinja2
+markupsafe
+werkzeug
+dlib-bin==19.24.6
+face-recognition-models==0.3.0
+
+#to overcome dlib installation issuse run this file file then install py -m pip install face-recognition==1.3.0 --no-deps via terminal

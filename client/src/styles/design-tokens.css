@@ -1,0 +1,51 @@
+:root {
+  /* Core Palette */
+  --color-primary: #246427;
+  --color-primary-light: #81C784;
+  --color-primary-bg: #F1F8E9;
+  --color-accent: #F8AC3B;
+  --color-accent-bg: #FFF8E1;
+
+  /* Surfaces */
+  --color-bg: #F4F6F3;
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F9FBF7;
+
+  /* Text */
+  --color-text: #212121;
+  --color-text-muted: #616161;
+  --color-text-light: #9E9E9E;
+
+  /* Borders */
+  --color-border: #E0E7DC;
+  --color-border-focus: #246427;
+
+  /* Status */
+  --color-success-bg: #E8F5E9;
+  --color-success-text: #246427;
+  --color-warning-bg: #FFF8E1;
+  --color-warning-text: #B07D00;
+  --color-danger-bg: #FFEBEE;
+  --color-danger-text: #C62828;
+
+  /* Radii */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  /* Spacing */
+  --space-1: 4px;  --space-2: 8px;   --space-3: 12px;  --space-4: 16px;
+  --space-5: 20px; --space-6: 24px;  --space-7: 28px;  --space-8: 32px;
+
+  /* Shadows — soft, not dramatic */
+  --shadow-xs: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-card: 0 2px 12px rgba(36,100,39,0.07);
+
+  /* Transitions */
+  --transition-base: 180ms ease;
+}
