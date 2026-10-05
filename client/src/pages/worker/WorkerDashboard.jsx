@@ -558,8 +558,8 @@ export default function WorkerDashboard() {
                   <div className="lg:w-[60%] space-y-4">
                     {/* Row 1: Attendance Recorded with Icon */}
                     <div className="flex items-center gap-2">
-                       <CheckCircle2 className="w-6 h-6 text-[#246427]" strokeWidth={2.5} />
-                       <h2 className="text-xl font-bold text-[#212121]">Attendance Recorded</h2>
+                      <CheckCircle2 className="w-6 h-6 text-[#246427]" strokeWidth={2.5} />
+                      <h2 className="text-xl font-bold text-[#212121]">Attendance Recorded</h2>
                     </div>
 
                     {/* Row 2: Task Name with badge on Right */}

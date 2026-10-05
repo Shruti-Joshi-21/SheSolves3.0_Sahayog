@@ -174,175 +174,175 @@ export default function LeavePage() {
 
 
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {loading
-            ? [0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-28 animate-pulse rounded-[20px] bg-[#FFFFFF] border border-[#E0E7DC]"
-                />
-              ))
-            : balanceCards.map((c, index) => (
-                <motion.div
-                  key={c.key}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: 0.05 * index }}
-                  className={`rounded-[20px] bg-[#FFFFFF] border border-[#E0E7DC] p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-2 ${c.cardClass}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <c.icon className="h-[22px] w-[22px] text-[#246427]" strokeWidth={2.5} />
-                    <p className="text-[1.25rem] lg:text-[1.5rem] font-bold text-[#212121] leading-tight truncate">
-                      {c.value}
-                    </p>
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="text-[0.75rem] text-[#616161] truncate line-clamp-1">{c.label}</p>
-                    {c.sub && <p className="mt-0.5 text-[0.7rem] text-[#9E9E9E] truncate line-clamp-1">{c.sub}</p>}
-                  </div>
-                </motion.div>
-              ))}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {loading
+          ? [0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-28 animate-pulse rounded-[20px] bg-[#FFFFFF] border border-[#E0E7DC]"
+            />
+          ))
+          : balanceCards.map((c, index) => (
+            <motion.div
+              key={c.key}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.05 * index }}
+              className={`rounded-[20px] bg-[#FFFFFF] border border-[#E0E7DC] p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-2 ${c.cardClass}`}
+            >
+              <div className="flex items-center gap-3">
+                <c.icon className="h-[22px] w-[22px] text-[#246427]" strokeWidth={2.5} />
+                <p className="text-[1.25rem] lg:text-[1.5rem] font-bold text-[#212121] leading-tight truncate">
+                  {c.value}
+                </p>
+              </div>
+              <div className="flex flex-col">
+                <p className="text-[0.75rem] text-[#616161] truncate line-clamp-1">{c.label}</p>
+                {c.sub && <p className="mt-0.5 text-[0.7rem] text-[#9E9E9E] truncate line-clamp-1">{c.sub}</p>}
+              </div>
+            </motion.div>
+          ))}
+      </div>
+
+      {!loading && (
+        <div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#E0E7DC]">
+            <motion.div
+              className="h-full rounded-full bg-[#246427]"
+              initial={{ width: 0 }}
+              animate={{ width: `${usedPct}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          </div>
+          <p className="mt-1 text-right text-[0.75rem] text-[#616161]">
+            {used} of {total} days used
+          </p>
+        </div>
+      )}
+
+      <div>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-[#212121]">Leave History</h2>
+            <span className="rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[0.75rem] text-[#246427]">
+              {leaves.length} requests
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 rounded-[12px] bg-[#246427] px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#1a4d1c] transition-all w-full sm:w-auto"
+          >
+            Create Request
+          </button>
         </div>
 
-        {!loading && (
-          <div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-[#E0E7DC]">
-              <motion.div
-                className="h-full rounded-full bg-[#246427]"
-                initial={{ width: 0 }}
-                animate={{ width: `${usedPct}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-            </div>
-            <p className="mt-1 text-right text-[0.75rem] text-[#616161]">
-              {used} of {total} days used
-            </p>
+        {loading ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-32 animate-pulse rounded-[14px] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E0E7DC]" />
+            ))}
           </div>
-        )}
-
-        <div>
-          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-[#212121]">Leave History</h2>
-              <span className="rounded-full bg-[#E8F5E9] px-2 py-0.5 text-[0.75rem] text-[#246427]">
-                {leaves.length} requests
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowModal(true)}
-              className="flex items-center justify-center gap-2 rounded-[12px] bg-[#246427] px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#1a4d1c] transition-all w-full sm:w-auto"
-            >
-              Create Request
-            </button>
+        ) : leaves.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[20px] bg-[#FFFFFF] py-16 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E0E7DC]">
+            <Calendar className="mb-4 h-48 w-48 text-[#E0E7DC]" strokeWidth={1} />
+            <p className="font-medium text-[#616161]">No leave requests yet</p>
+            <p className="mt-1 text-[0.875rem] text-[#9E9E9E]">Click &apos;Request Leave&apos; to apply</p>
           </div>
-
-          {loading ? (
-            <div className="space-y-3">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-32 animate-pulse rounded-[14px] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[#E0E7DC]" />
-              ))}
-            </div>
-          ) : leaves.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-[20px] bg-[#FFFFFF] py-16 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-[#E0E7DC]">
-              <Calendar className="mb-4 h-48 w-48 text-[#E0E7DC]" strokeWidth={1} />
-              <p className="font-medium text-[#616161]">No leave requests yet</p>
-              <p className="mt-1 text-[0.875rem] text-[#9E9E9E]">Click &apos;Request Leave&apos; to apply</p>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {leaves.map((leave, index) => {
-                const lt = leave.leaveType || 'CASUAL';
-                const days = leaveSpanDays(leave.fromDate, leave.toDate);
-                return (
-                  <motion.li
-                    key={leave._id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.04 * index }}
-                    className="relative rounded-[20px] bg-[#FFFFFF] p-6 shadow-[var(--shadow-card)] border border-[#E0E7DC]"
-                  >
-                    <div className="sm:absolute sm:top-4 sm:right-6 flex flex-row sm:flex-col items-center gap-2 min-w-[100px] mb-4 sm:mb-0 justify-between sm:justify-start">
-                      <span
-                        className={`rounded-full px-4 py-1.5 text-[0.7rem] font-bold text-center sm:w-full shadow-sm ${statusPillClass(leave.status)}`}
+        ) : (
+          <ul className="space-y-3">
+            {leaves.map((leave, index) => {
+              const lt = leave.leaveType || 'CASUAL';
+              const days = leaveSpanDays(leave.fromDate, leave.toDate);
+              return (
+                <motion.li
+                  key={leave._id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.04 * index }}
+                  className="relative rounded-[20px] bg-[#FFFFFF] p-6 shadow-[var(--shadow-card)] border border-[#E0E7DC]"
+                >
+                  <div className="sm:absolute sm:top-4 sm:right-6 flex flex-row sm:flex-col items-center gap-2 min-w-[100px] mb-4 sm:mb-0 justify-between sm:justify-start">
+                    <span
+                      className={`rounded-full px-4 py-1.5 text-[0.7rem] font-bold text-center sm:w-full shadow-sm ${statusPillClass(leave.status)}`}
+                    >
+                      {leave.status}
+                    </span>
+                    {leave.status === 'PENDING' && (
+                      <button
+                        type="button"
+                        disabled={cancellingId === leave._id}
+                        onClick={() => setSelectedLeaveForCancel(leave._id)}
+                        className="text-[0.7rem] font-bold text-[#C62828] transition-colors hover:text-[#b71c1c] text-center px-2 py-1 rounded-lg hover:bg-red-50"
                       >
-                        {leave.status}
-                      </span>
-                      {leave.status === 'PENDING' && (
-                        <button
-                          type="button"
-                          disabled={cancellingId === leave._id}
-                          onClick={() => setSelectedLeaveForCancel(leave._id)}
-                          className="text-[0.7rem] font-bold text-[#C62828] transition-colors hover:text-[#b71c1c] text-center px-2 py-1 rounded-lg hover:bg-red-50"
-                        >
-                          {cancellingId === leave._id ? (
-                            <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-                          ) : (
-                            'Cancel'
-                          )}
-                        </button>
-                      )}
+                        {cancellingId === leave._id ? (
+                          <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                        ) : (
+                          'Cancel'
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:pr-[120px]">
+                    <div className="flex w-full shrink-0 flex-col items-center sm:w-20 pt-1">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-[#616161] text-center">
+                        {lt}
+                      </p>
+                      <p className="mt-2 text-[0.75rem] font-medium text-[#616161]">
+                        {days} day{days !== 1 ? 's' : ''}
+                      </p>
                     </div>
 
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:pr-[120px]">
-                      <div className="flex w-full shrink-0 flex-col items-center sm:w-20 pt-1">
-                        <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-[#616161] text-center">
-                          {lt}
-                        </p>
-                        <p className="mt-2 text-[0.75rem] font-medium text-[#616161]">
-                          {days} day{days !== 1 ? 's' : ''}
-                        </p>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex items-center gap-2.5 text-[1rem] font-bold text-[#212121]">
+                        <CalendarDays className="h-5 w-5 shrink-0 text-[#246427]" />
+                        {formatDateRange(leave.fromDate, leave.toDate)}
                       </div>
 
-                      <div className="min-w-0 flex-1 space-y-3">
-                        <div className="flex items-center gap-2.5 text-[1rem] font-bold text-[#212121]">
-                          <CalendarDays className="h-5 w-5 shrink-0 text-[#246427]" />
-                          {formatDateRange(leave.fromDate, leave.toDate)}
-                        </div>
-                        
-                        <div className="flex items-start gap-2.5 text-[0.9375rem] text-[#616161] leading-relaxed">
-                          <FileText className="mt-1 h-4 w-4 shrink-0 text-[#9E9E9E]" />
-                          <span className="min-w-0">{truncate(leave.reason, 120)}</span>
-                        </div>
+                      <div className="flex items-start gap-2.5 text-[0.9375rem] text-[#616161] leading-relaxed">
+                        <FileText className="mt-1 h-4 w-4 shrink-0 text-[#9E9E9E]" />
+                        <span className="min-w-0">{truncate(leave.reason, 120)}</span>
+                      </div>
 
-                        {leave.exceedsEntitlement && (leave.excessUnpaidDays ?? 0) > 0 && (
-                          <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-100 mt-2">
-                            <p className="text-[0.75rem] font-semibold text-[#B07D00]">
-                              Includes {leave.excessUnpaidDays} unpaid/extra day
-                              {leave.excessUnpaidDays !== 1 ? 's' : ''} — management notified.
-                            </p>
+                      {leave.exceedsEntitlement && (leave.excessUnpaidDays ?? 0) > 0 && (
+                        <div className="rounded-lg bg-amber-50 p-2.5 border border-amber-100 mt-2">
+                          <p className="text-[0.75rem] font-semibold text-[#B07D00]">
+                            Includes {leave.excessUnpaidDays} unpaid/extra day
+                            {leave.excessUnpaidDays !== 1 ? 's' : ''} — management notified.
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-4 pt-1">
+                        <span className="text-[0.75rem] text-[#9E9E9E]">
+                          Applied {formatRelativeTime(leave.createdAt)}
+                        </span>
+
+                        {(leave.status === 'APPROVED' || leave.status === 'REJECTED') && (
+                          <div className="flex items-center gap-2">
+                            {leave.reviewedBy?.fullName && (
+                              <div className="flex items-center gap-1.5 text-[0.75rem] text-[#616161] font-medium">
+                                <User className="h-3.5 w-3.5 shrink-0 text-[#246427]" />
+                                {leave.reviewedBy.fullName}
+                              </div>
+                            )}
+                            {leave.reviewNote && (
+                              <span className="text-[0.75rem] italic text-[#9E9E9E] border-l border-[#E0E7DC] pl-2">
+                                "{truncate(leave.reviewNote, 60)}"
+                              </span>
+                            )}
                           </div>
                         )}
-
-                        <div className="flex flex-wrap items-center gap-4 pt-1">
-                          <span className="text-[0.75rem] text-[#9E9E9E]">
-                            Applied {formatRelativeTime(leave.createdAt)}
-                          </span>
-                          
-                          {(leave.status === 'APPROVED' || leave.status === 'REJECTED') && (
-                            <div className="flex items-center gap-2">
-                                {leave.reviewedBy?.fullName && (
-                                  <div className="flex items-center gap-1.5 text-[0.75rem] text-[#616161] font-medium">
-                                    <User className="h-3.5 w-3.5 shrink-0 text-[#246427]" />
-                                    {leave.reviewedBy.fullName}
-                                  </div>
-                                )}
-                                {leave.reviewNote && (
-                                  <span className="text-[0.75rem] italic text-[#9E9E9E] border-l border-[#E0E7DC] pl-2">
-                                    "{truncate(leave.reviewNote, 60)}"
-                                  </span>
-                                )}
-                            </div>
-                          )}
-                        </div>
                       </div>
                     </div>
-                  </motion.li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
+                  </div>
+                </motion.li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
 
       <LeaveRequestModal

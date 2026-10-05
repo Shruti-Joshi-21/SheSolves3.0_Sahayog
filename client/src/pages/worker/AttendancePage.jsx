@@ -273,10 +273,10 @@ export default function AttendancePage() {
             ) : (
               <span
                 className={`text-[0.875rem] font-semibold ${isFuture
-                    ? 'text-[#BDBDBD]'
-                    : showPastEmpty
-                      ? 'text-[#9E9E9E]'
-                      : 'text-[#212121]'
+                  ? 'text-[#BDBDBD]'
+                  : showPastEmpty
+                    ? 'text-[#9E9E9E]'
+                    : 'text-[#212121]'
                   }`}
               >
                 {day}
@@ -355,7 +355,7 @@ export default function AttendancePage() {
             >
               <div className="flex items-center gap-3">
                 <card.Icon className="h-[22px] w-[22px]" style={card.iconStyle} strokeWidth={2.5} />
-                <p 
+                <p
                   className="text-[1.25rem] lg:text-[1.5rem] font-bold leading-tight truncate text-[#212121]"
                 >
                   {card.value}

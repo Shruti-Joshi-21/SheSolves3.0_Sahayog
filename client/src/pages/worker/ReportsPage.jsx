@@ -208,11 +208,10 @@ export default function ReportsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: 0.03 * index }}
               onClick={() => onFilterClick(f.value)}
-              className={`rounded-[10px] px-4 py-2 text-[0.875rem] font-medium transition ${
-                statusFilter === f.value
+              className={`rounded-[10px] px-4 py-2 text-[0.875rem] font-medium transition ${statusFilter === f.value
                   ? 'bg-[#246427] text-white shadow-sm'
                   : 'border border-[#E0E7DC] bg-[#FFFFFF] text-[#616161] hover:border-[#246427]/40 hover:bg-[#F1F8E9]'
-              }`}
+                }`}
             >
               {f.label}
             </motion.button>
