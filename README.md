@@ -262,17 +262,10 @@ Open three separate terminal windows:
 
 ## 📸 Screenshots
 
-### 🏠 Landing Page
-![Sahayog Landing Page](./screenshots/1.jepg)
-
-### 👷 Worker Dashboard
-![Worker Dashboard](./screenshots/2.jepg)
-
-### 📍 Team Lead Dashboard
-![Mark Attendance](./screenshots/3.jepg)
-
-### 📊 Admin Dashboard
-![Admin Dashboard](./screenshots/4.jepg)
+![Sahayog Landing Page](./1.png)
+![Worker Dashboard](./2.png)
+![Mark Attendance](./3.png)
+![Admin Dashboard](./4.png)
 
 ---
 
