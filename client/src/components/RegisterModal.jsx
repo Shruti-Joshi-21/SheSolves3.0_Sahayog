@@ -88,7 +88,7 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-[#FFFFFF] rounded-[20px] w-full max-w-md overflow-hidden relative shadow-[0_8px_32px_rgba(0,0,0,0.14)] p-0 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
-                
+
                 {/* Header */}
                 <div className="bg-[#F1F8E9] px-[24px] py-[16px] flex justify-between items-center border-b border-[#E0E7DC]">
                     <div className="flex items-center gap-3">
@@ -100,7 +100,7 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
                             <p className="text-xs text-[#616161]">Create your Sahayog account</p>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={onClose}
                         className="p-2 rounded-full text-[#616161] hover:text-[#246427] transition-colors"
                     >
@@ -110,7 +110,7 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
 
                 {/* Form Body */}
                 <form onSubmit={handleSubmit} className="p-[24px] bg-[#FFFFFF] space-y-4 max-h-[70vh] overflow-y-auto">
-                    
+
                     {/* Role Warning / Context */}
                     {(role === 'Field Worker') && (
                         <div className="bg-[#FFF8E1] border border-[#FFE082] p-3 rounded-[10px] flex gap-3 text-xs text-[#B07D00]">
@@ -175,14 +175,14 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
                     {(role === 'Field Worker') && (
                         <div className="pt-4 border-t border-gray-100">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Verification Photo</label>
-                            
+
                             {faceImage ? (
                                 <div className="relative rounded-2xl overflow-hidden border-2 border-green-500 shadow-inner">
                                     <img src={faceImage} alt="Captured" className="w-full aspect-video object-cover" />
                                     <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1 shadow-lg">
                                         <CheckCircle2 size={16} />
                                     </div>
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setIsCapturing(true)}
                                         className="absolute bottom-2 inset-x-2 bg-white/90 backdrop-blur-sm text-gray-700 text-xs py-2 rounded-lg font-bold hover:bg-white transition-colors"
@@ -208,7 +208,7 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
                                             <Camera size={24} />
                                         </button>
                                     </div>
-                                    <button 
+                                    <button
                                         type="button"
                                         onClick={() => setIsCapturing(false)}
                                         className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
@@ -235,9 +235,8 @@ const RegisterModal = ({ isOpen, onClose, role }) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full px-[20px] py-[10px] rounded-[10px] font-semibold text-[0.875rem] text-[#FFFFFF] shadow-sm transition-[background-color,shadow] duration-180 flex items-center justify-center gap-2 ${
-                                loading ? 'bg-[#9E9E9E] cursor-not-allowed' : 'bg-[#246427] hover:bg-[#1a4d1c] hover:shadow'
-                            }`}
+                            className={`w-full px-[20px] py-[10px] rounded-[10px] font-semibold text-[0.875rem] text-[#FFFFFF] shadow-sm transition-[background-color,shadow] duration-180 flex items-center justify-center gap-2 ${loading ? 'bg-[#9E9E9E] cursor-not-allowed' : 'bg-[#246427] hover:bg-[#1a4d1c] hover:shadow'
+                                }`}
                         >
                             {loading ? (
                                 <>
