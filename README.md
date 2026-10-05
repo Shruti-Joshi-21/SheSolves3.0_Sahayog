@@ -260,6 +260,12 @@ Open three separate terminal windows:
 
 ---
 
+## 🏗️ System Architecture
+
+![Architecture](./5.png)
+
+---
+
 ## 📸 Screenshots
 
 ### 🏠 Sahayog Landing Page
