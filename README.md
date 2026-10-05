@@ -263,16 +263,16 @@ Open three separate terminal windows:
 ## 📸 Screenshots
 
 ### 🏠 Landing Page
-![Sahayog Landing Page](D:\SheSolve\1.jepg)
+![Sahayog Landing Page](./screenshots/1.jepg)
 
 ### 👷 Worker Dashboard
-![Worker Dashboard](D:\SheSolve\2.jepg)
+![Worker Dashboard](./screenshots/2.jepg)
 
 ### 📍 Team Lead Dashboard
-![Mark Attendance](D:\SheSolve\3.jepg)
+![Mark Attendance](./screenshots/3.jepg)
 
 ### 📊 Admin Dashboard
-![Admin Dashboard](D:\SheSolve\4.jepg)
+![Admin Dashboard](./screenshots/4.jepg)
 
 ---
 
