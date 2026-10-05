@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Shield, 
-  MapPin, 
-  BarChart3, 
-  ClipboardList, 
-  Users, 
-  User, 
+import {
+  Shield,
+  MapPin,
+  BarChart3,
+  ClipboardList,
+  Users,
+  User,
   CalendarDays,
-  Twitter, 
-  Instagram, 
+  Twitter,
+  Instagram,
   Github
 } from 'lucide-react';
 import RegisterModal from '../components/RegisterModal';
@@ -45,7 +45,7 @@ export default function LandingPage() {
       setScrolled(window.scrollY > 10);
     };
     window.addEventListener('scroll', handleScroll);
-    
+
     // Hero fade-in animation trigger
     const timer = setTimeout(() => setVisible(true), 100);
 
@@ -63,10 +63,9 @@ export default function LandingPage() {
   return (
     <div className="font-sans min-h-screen flex flex-col pt-16" style={{ fontFamily: "'DM Sans', sans-serif", backgroundColor: '#F1F8E9' }}>
       {/* 1. NAVBAR */}
-      <nav 
-        className={`fixed top-0 left-0 w-full z-50 bg-[#F1F8E9] transition-all duration-300 border-b border-[#E0D9C8] ${
-          scrolled ? 'shadow-md py-3' : 'py-4'
-        }`}
+      <nav
+        className={`fixed top-0 left-0 w-full z-50 bg-[#F1F8E9] transition-all duration-300 border-b border-[#E0D9C8] ${scrolled ? 'shadow-md py-3' : 'py-4'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
@@ -105,33 +104,30 @@ export default function LandingPage() {
       {/* 2. HERO SECTION */}
       <section className="bg-[#005F02] w-full min-h-[520px] py-[80px] px-6 lg:px-12 flex items-center overflow-hidden">
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
+
           {/* LEFT COLUMN */}
           <div className="flex flex-col">
-            <h1 
-              className={`text-white font-bold leading-[1.2] text-[clamp(2rem,4vw,3rem)] transition-all duration-700 transform ${
-                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-              }`}
+            <h1
+              className={`text-white font-bold leading-[1.2] text-[clamp(2rem,4vw,3rem)] transition-all duration-700 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                }`}
               style={{ fontFamily: "'Merriweather', serif" }}
             >
               Streamline Your <span className="text-[#F8AC3B]">Field</span><br />
               Operations
             </h1>
-            
-            <p 
-              className={`text-white/60 mt-4 text-base max-w-[420px] leading-relaxed transition-all duration-700 delay-100 transform ${
-                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-              }`}
+
+            <p
+              className={`text-white/60 mt-4 text-base max-w-[420px] leading-relaxed transition-all duration-700 delay-100 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                }`}
             >
               Comprehensive attendance tracking, leave management, task
               planning, and reporting system designed specifically for
               environmental NGOs and field operations.
             </p>
 
-            <div 
-              className={`flex flex-wrap gap-3 mt-6 transition-all duration-700 delay-200 transform ${
-                visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-              }`}
+            <div
+              className={`flex flex-wrap gap-3 mt-6 transition-all duration-700 delay-200 transform ${visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+                }`}
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/40 bg-white/10 text-white text-sm backdrop-blur-sm">
                 <MapPin size={14} /> Location Tracking
@@ -147,9 +143,9 @@ export default function LandingPage() {
 
           {/* RIGHT COLUMN */}
           <div className="relative w-full h-[380px] flex items-center justify-center">
-            <img 
-              src="/OBJECTS.svg" 
-              alt="Sahayog illustration" 
+            <img
+              src="/OBJECTS.svg"
+              alt="Sahayog illustration"
               className="w-full h-full object-contain"
             />
           </div>
@@ -167,7 +163,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            
+
             {/* Card 1 - Volunteer */}
             <div className="bg-[#F9F9F5] border border-[#E0D9C8] rounded-2xl p-8 shadow-sm hover:shadow-md hover:border-[#427A43] hover:-translate-y-1 transition-all duration-250 flex flex-col items-center">
               <div className="w-16 h-16 rounded-full bg-[#E8F5E9] flex items-center justify-center mb-6">
@@ -193,7 +189,7 @@ export default function LandingPage() {
               </button>
               <p className="mt-4 text-[0.8rem] text-gray-500">
                 Don't have an account?{' '}
-                <button 
+                <button
                   onClick={() => handleOpenRegister('Field Worker')}
                   className="text-[#427A43] font-bold hover:underline"
                 >
@@ -227,7 +223,7 @@ export default function LandingPage() {
               </button>
               <p className="mt-4 text-[0.8rem] text-gray-500">
                 Don't have an account?{' '}
-                <button 
+                <button
                   onClick={() => handleOpenRegister('Team Lead')}
                   className="text-[#005F02] font-bold hover:underline"
                 >
@@ -261,7 +257,7 @@ export default function LandingPage() {
               </button>
               <p className="mt-4 text-[0.8rem] text-gray-500">
                 Don't have an account?{' '}
-                <button 
+                <button
                   onClick={() => handleOpenRegister('Administrator')}
                   className="text-[#F8AC3B] font-bold hover:underline"
                 >
@@ -285,7 +281,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
-            
+
             {/* Tile 1 */}
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-white border border-[#E0D9C8] rounded-full flex items-center justify-center shadow-sm mb-4">
@@ -338,7 +334,7 @@ export default function LandingPage() {
       <footer className="bg-[#005F02] w-full shrink-0 pt-[48px] pb-[24px] px-6 md:px-[40px] mt-auto">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
-            
+
             {/* Column 1 */}
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-4">
@@ -388,10 +384,10 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <RegisterModal 
-        isOpen={isRegisterModalOpen} 
-        onClose={() => setIsRegisterModalOpen(false)} 
-        role={selectedRole} 
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        role={selectedRole}
       />
 
       <LoginModal
