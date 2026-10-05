@@ -262,18 +262,20 @@ Open three separate terminal windows:
 
 ## 📸 Screenshots
 
-## 📸 Screenshots
-
 ### 🏠 Sahayog Landing Page
+
 ![Sahayog Landing Page](./1.jpeg)
 
 ### 👷 Worker Dashboard
+
 ![Worker Dashboard](./2.jpeg)
 
 ### 📍 Mark Attendance
+
 ![Mark Attendance](./3.jpeg)
 
 ### 📊 Admin Dashboard
+
 ![Admin Dashboard](./4.jpeg)
 
 ---
