@@ -310,11 +310,11 @@ export default function CheckInModal({ isOpen, onClose, task, onSuccess }) {
                               ⚠ {distanceM}m from site (limit: {task.allowedRadius}m) — will be flagged
                             </span>
                           )}
-                           <button
-                             type="button"
-                             className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                             onClick={() => setStep(1)}
-                           >
+                          <button
+                            type="button"
+                            className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                            onClick={() => setStep(1)}
+                          >
                             Next
                           </button>
                         </div>
@@ -411,33 +411,33 @@ export default function CheckInModal({ isOpen, onClose, task, onSuccess }) {
                         </button>
                       ) : (
                         <div className="relative">
-                            <button
-                              type="button"
-                              className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 shadow"
-                              onClick={() => {
-                                setFieldPreviewUrl((prev) => {
-                                  if (prev) URL.revokeObjectURL(prev);
-                                  return null;
-                                });
-                                setFieldImageFile(null);
-                              }}
-                              aria-label="Remove photo"
-                            >
-                              <X className="h-4 w-4 text-[#C62828]" />
-                            </button>
-                           <img
-                             src={fieldPreviewUrl}
-                             alt="Field"
-                             className="max-h-64 w-full rounded-[14px] object-cover border border-[#E0E7DC]"
-                           />
-                           <p className="mt-2 text-[0.875rem] text-[#616161]">
-                             {fieldImageFile?.name} ({Math.round((fieldImageFile?.size || 0) / 1024)} KB)
-                           </p>
-                           <button
-                             type="button"
-                             className="mt-3 w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                             onClick={() => setStep(3)}
-                           >
+                          <button
+                            type="button"
+                            className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 shadow"
+                            onClick={() => {
+                              setFieldPreviewUrl((prev) => {
+                                if (prev) URL.revokeObjectURL(prev);
+                                return null;
+                              });
+                              setFieldImageFile(null);
+                            }}
+                            aria-label="Remove photo"
+                          >
+                            <X className="h-4 w-4 text-[#C62828]" />
+                          </button>
+                          <img
+                            src={fieldPreviewUrl}
+                            alt="Field"
+                            className="max-h-64 w-full rounded-[14px] object-cover border border-[#E0E7DC]"
+                          />
+                          <p className="mt-2 text-[0.875rem] text-[#616161]">
+                            {fieldImageFile?.name} ({Math.round((fieldImageFile?.size || 0) / 1024)} KB)
+                          </p>
+                          <button
+                            type="button"
+                            className="mt-3 w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                            onClick={() => setStep(3)}
+                          >
                             Next
                           </button>
                         </div>

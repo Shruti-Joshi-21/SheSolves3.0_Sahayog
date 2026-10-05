@@ -219,21 +219,21 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                   <div className="w-full text-left space-y-2 px-2">
                     <label className="text-sm font-medium text-gray-700">Enter your reason of early checkout</label>
                     <textarea
-                        className="w-full rounded-xl border border-gray-200 p-4 text-sm focus:ring-2 focus:ring-[#246427] focus:border-transparent transition-all h-32 resize-none"
-                        placeholder="Please state why you are leaving before completion..."
-                        value={earlyReason}
-                        onChange={(e) => setEarlyReason(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 p-4 text-sm focus:ring-2 focus:ring-[#246427] focus:border-transparent transition-all h-32 resize-none"
+                      placeholder="Please state why you are leaving before completion..."
+                      value={earlyReason}
+                      onChange={(e) => setEarlyReason(e.target.value)}
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col gap-3 px-2">
                   <button
                     type="button"
                     className="w-full rounded-[12px] bg-[#246427] py-4 text-[1rem] font-bold text-white shadow-[0_4px_14px_rgba(36,100,39,0.2)] hover:bg-[#1a4d1c] transition-all"
                     onClick={() => {
-                        setShowEarlyConfirmation(false);
-                        onClose();
+                      setShowEarlyConfirmation(false);
+                      onClose();
                     }}
                   >
                     Cancel
@@ -330,317 +330,317 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                   </div>
                 )}
 
-            {task && attendanceRecord && !result && (
-              <>
-                <h2 className="bg-[#F1F8E9] border-b border-[#E0E7DC] px-4 sm:px-[24px] py-[16px] rounded-t-[20px] text-[1rem] font-semibold text-[#212121] -mx-4 sm:-mx-[24px] -mt-4 sm:-mt-[24px] mb-[24px] pr-12">Check Out</h2>
-                <div className="mb-5 mt-3 overflow-x-auto">
-                  <StepIndicator steps={STEPS} currentStep={step} />
-                </div>
+                {task && attendanceRecord && !result && (
+                  <>
+                    <h2 className="bg-[#F1F8E9] border-b border-[#E0E7DC] px-4 sm:px-[24px] py-[16px] rounded-t-[20px] text-[1rem] font-semibold text-[#212121] -mx-4 sm:-mx-[24px] -mt-4 sm:-mt-[24px] mb-[24px] pr-12">Check Out</h2>
+                    <div className="mb-5 mt-3 overflow-x-auto">
+                      <StepIndicator steps={STEPS} currentStep={step} />
+                    </div>
 
-                <div className="max-h-[calc(90vh-12rem)] overflow-y-auto pr-1">
-                  {step === 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Capturing Your Location</h3>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-[10px] bg-[#E8F5E9] px-3 py-1 text-xs font-semibold text-[#246427]">
-                          {task.title}
-                        </span>
-                        <span className="rounded-[10px] bg-[#F9FBF7] px-3 py-1 text-xs text-[#616161] border border-[#E0E7DC]">
-                          {task.locationName}
-                        </span>
-                      </div>
-                      {gpsLoading && (
-                        <div className="flex flex-col items-center py-8">
-                          <div className="relative flex h-24 w-24 items-center justify-center">
-                            {[0, 1, 2].map((i) => (
-                              <motion.span
-                                key={i}
-                                className="absolute rounded-full border-2 border-[#246427]/30"
-                                style={{ width: 48 + i * 28, height: 48 + i * 28 }}
-                                animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
-                                transition={{ repeat: Infinity, duration: 2.2, delay: i * 0.25 }}
-                              />
-                            ))}
-                            <MapPin className="relative z-10 h-10 w-10 text-[#246427]" />
-                          </div>
-                          <p className="mt-4 text-sm text-[#616161]">Fetching GPS coordinates...</p>
-                        </div>
-                      )}
-                      {!gpsLoading && gpsError && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-[#C62828] bg-[#FFEBEE] p-3 rounded-[10px] border border-[#FFCDD2]">{gpsError}</p>
-                          <button
-                            type="button"
-                            className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                            onClick={captureGps}
-                          >
-                            Retry
-                          </button>
-                        </div>
-                      )}
-                      {!gpsLoading && gpsData && !gpsError && (
+                    <div className="max-h-[calc(90vh-12rem)] overflow-y-auto pr-1">
+                      {step === 0 && (
                         <div className="space-y-4">
-                          <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className="flex justify-center"
-                          >
-                            <CheckCircle2 className="h-14 w-14 text-[#246427]" />
-                          </motion.div>
-                          <p className="font-mono text-[0.875rem] text-[#616161] text-center">
-                            Lat: {gpsData.latitude.toFixed(5)}, Lng: {gpsData.longitude.toFixed(5)}
-                          </p>
-                          {inRange ? (
-                            <span className="inline-flex rounded-full bg-[#E8F5E9] px-[10px] py-[3px] text-[0.72rem] font-semibold text-[#246427] border border-[#A5D6A7]">
-                              ✓ Within range ({distanceM}m)
+                          <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Capturing Your Location</h3>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-[10px] bg-[#E8F5E9] px-3 py-1 text-xs font-semibold text-[#246427]">
+                              {task.title}
                             </span>
-                          ) : (
-                            <span className="inline-flex rounded-full bg-[#FFF8E1] px-[10px] py-[3px] text-[0.72rem] font-semibold text-[#B07D00] border border-[#FFE082]">
-                              ⚠ {distanceM}m from site (limit: {task.allowedRadius}m) — will be flagged
+                            <span className="rounded-[10px] bg-[#F9FBF7] px-3 py-1 text-xs text-[#616161] border border-[#E0E7DC]">
+                              {task.locationName}
                             </span>
-                          )}
-                          <button
-                            type="button"
-                            className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                            onClick={() => setStep(1)}
-                          >
-                            Next
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {step === 1 && (
-                    <div className="space-y-4">
-                      <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Verify Your Identity</h3>
-                      <p className="text-[0.875rem] text-[#616161]">Look at the camera and click capture</p>
-                      {camDenied ? (
-                        <div className="flex flex-col items-center py-8 text-center bg-[#FFEBEE] rounded-[10px] p-4 border border-[#FFCDD2]">
-                          <Camera className="mb-2 h-12 w-12 text-[#C62828]" />
-                          <p className="text-sm text-[#C62828]">
-                            Camera access denied. Please allow camera permissions.
-                          </p>
-                        </div>
-                      ) : !facePreview ? (
-                        <>
-                          <Webcam
-                            audio={false}
-                            ref={webcamRef}
-                            screenshotFormat="image/jpeg"
-                            mirrored
-                            videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
-                            onUserMediaError={() => setCamDenied(true)}
-                            className="aspect-[4/3] w-full rounded-[14px] bg-black object-cover"
-                          />
-                          <button
-                            type="button"
-                            className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                            onClick={handleCaptureFace}
-                          >
-                            <Camera className="h-5 w-5" />
-                            Capture
-                          </button>
-                        </>
-                      ) : (
-                        <div className="space-y-3">
-                          <img
-                            src={facePreview}
-                            alt="Face capture"
-                            className="aspect-[4/3] w-full rounded-[14px] border border-[#E0E7DC] object-cover"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              className="flex-1 rounded-[10px] border-[1.5px] border-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#246427] bg-transparent hover:bg-[#F1F8E9] transition-colors"
-                              onClick={() => {
-                                setFacePreview(null);
-                                setFaceImageFile(null);
-                              }}
-                            >
-                              Retake
-                            </button>
-                            <button
-                              type="button"
-                              className="flex-1 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                              onClick={() => setStep(2)}
-                            >
-                              Next
-                            </button>
                           </div>
+                          {gpsLoading && (
+                            <div className="flex flex-col items-center py-8">
+                              <div className="relative flex h-24 w-24 items-center justify-center">
+                                {[0, 1, 2].map((i) => (
+                                  <motion.span
+                                    key={i}
+                                    className="absolute rounded-full border-2 border-[#246427]/30"
+                                    style={{ width: 48 + i * 28, height: 48 + i * 28 }}
+                                    animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
+                                    transition={{ repeat: Infinity, duration: 2.2, delay: i * 0.25 }}
+                                  />
+                                ))}
+                                <MapPin className="relative z-10 h-10 w-10 text-[#246427]" />
+                              </div>
+                              <p className="mt-4 text-sm text-[#616161]">Fetching GPS coordinates...</p>
+                            </div>
+                          )}
+                          {!gpsLoading && gpsError && (
+                            <div className="space-y-3">
+                              <p className="text-sm text-[#C62828] bg-[#FFEBEE] p-3 rounded-[10px] border border-[#FFCDD2]">{gpsError}</p>
+                              <button
+                                type="button"
+                                className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                                onClick={captureGps}
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          )}
+                          {!gpsLoading && gpsData && !gpsError && (
+                            <div className="space-y-4">
+                              <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="flex justify-center"
+                              >
+                                <CheckCircle2 className="h-14 w-14 text-[#246427]" />
+                              </motion.div>
+                              <p className="font-mono text-[0.875rem] text-[#616161] text-center">
+                                Lat: {gpsData.latitude.toFixed(5)}, Lng: {gpsData.longitude.toFixed(5)}
+                              </p>
+                              {inRange ? (
+                                <span className="inline-flex rounded-full bg-[#E8F5E9] px-[10px] py-[3px] text-[0.72rem] font-semibold text-[#246427] border border-[#A5D6A7]">
+                                  ✓ Within range ({distanceM}m)
+                                </span>
+                              ) : (
+                                <span className="inline-flex rounded-full bg-[#FFF8E1] px-[10px] py-[3px] text-[0.72rem] font-semibold text-[#B07D00] border border-[#FFE082]">
+                                  ⚠ {distanceM}m from site (limit: {task.allowedRadius}m) — will be flagged
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className="w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                                onClick={() => setStep(1)}
+                              >
+                                Next
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
 
-                  {step === 2 && (
-                    <div className="space-y-4">
-                      <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Upload After Photo</h3>
-                      <p className="text-[0.875rem] text-[#616161]">
-                        Take a photo of the field AFTER completing work
-                      </p>
-                      <input
-                        ref={fieldInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={handleFieldFile}
-                      />
-                      {!fieldPreviewUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => fieldInputRef.current?.click()}
-                          className="flex min-h-[200px] w-full flex-col items-center justify-center rounded-[14px] border border-dashed border-[#246427] bg-[#F9FBF7] transition-colors hover:bg-[#F1F8E9]"
-                        >
-                          <ImagePlus className="mb-2 h-14 w-14 text-[#246427]" />
-                          <span className="text-[0.875rem] text-[#616161]">
-                            Tap to capture or upload field photo
-                          </span>
-                        </button>
-                      ) : (
-                        <div className="relative">
-                          <button
-                            type="button"
-                            className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 shadow"
-                            onClick={() => {
-                              setFieldPreviewUrl((prev) => {
-                                if (prev) URL.revokeObjectURL(prev);
-                                return null;
-                              });
-                              setFieldImageFile(null);
-                            }}
-                            aria-label="Remove photo"
-                          >
-                            <X className="h-4 w-4 text-[#C62828]" />
-                          </button>
-                          <img
-                            src={fieldPreviewUrl}
-                            alt="Field"
-                            className="max-h-64 w-full rounded-[14px] object-cover border border-[#E0E7DC]"
-                          />
-                          <p className="mt-2 text-[0.875rem] text-[#616161]">
-                            {fieldImageFile?.name} ({Math.round((fieldImageFile?.size || 0) / 1024)} KB)
-                          </p>
-                          <button
-                            type="button"
-                            className="mt-3 w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                            onClick={() => setStep(3)}
-                          >
-                            Next
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {step === 3 && (
-                    <div className="space-y-4">
-                      <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Review & Check Out</h3>
-                      <div className="rounded-[10px] bg-[#F9FBF7] p-[16px] mb-[16px] text-[0.875rem] space-y-2 border border-[#E0E7DC]">
-                        <div className="flex justify-between gap-2">
-                          <span className="text-[#616161]">Task</span>
-                          <span className="font-medium text-[#212121] text-right">{task.title}</span>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <span className="text-[#616161]">Location</span>
-                          <span className="text-[#212121] text-right">{task.locationName}</span>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <span className="text-[#616161]">Checked In At</span>
-                          <span className="text-[#212121]">
-                            {attendanceRecord.checkInTime
-                              ? new Date(attendanceRecord.checkInTime).toLocaleTimeString('en-US', {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                              })
-                              : '—'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <span className="text-[#616161]">Time</span>
-                          <span className="text-[#212121]">
-                            {new Date().toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true,
-                            })}
-                          </span>
-                        </div>
-                        <div className="flex justify-between gap-2 items-center">
-                          <span className="text-[#616161]">GPS</span>
-                          {inRange ? (
-                            <span className="rounded-full bg-[#E8F5E9] px-2 py-0.5 text-xs font-semibold text-[#246427] border border-[#A5D6A7]">
-                              ✓ Within range ({distanceM}m)
-                            </span>
+                      {step === 1 && (
+                        <div className="space-y-4">
+                          <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Verify Your Identity</h3>
+                          <p className="text-[0.875rem] text-[#616161]">Look at the camera and click capture</p>
+                          {camDenied ? (
+                            <div className="flex flex-col items-center py-8 text-center bg-[#FFEBEE] rounded-[10px] p-4 border border-[#FFCDD2]">
+                              <Camera className="mb-2 h-12 w-12 text-[#C62828]" />
+                              <p className="text-sm text-[#C62828]">
+                                Camera access denied. Please allow camera permissions.
+                              </p>
+                            </div>
+                          ) : !facePreview ? (
+                            <>
+                              <Webcam
+                                audio={false}
+                                ref={webcamRef}
+                                screenshotFormat="image/jpeg"
+                                mirrored
+                                videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
+                                onUserMediaError={() => setCamDenied(true)}
+                                className="aspect-[4/3] w-full rounded-[14px] bg-black object-cover"
+                              />
+                              <button
+                                type="button"
+                                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                                onClick={handleCaptureFace}
+                              >
+                                <Camera className="h-5 w-5" />
+                                Capture
+                              </button>
+                            </>
                           ) : (
-                            <span className="rounded-full bg-[#FFF8E1] px-2 py-0.5 text-xs font-semibold text-[#B07D00] border border-[#FFE082]">
-                              ⚠ {distanceM}m — flagged
-                            </span>
+                            <div className="space-y-3">
+                              <img
+                                src={facePreview}
+                                alt="Face capture"
+                                className="aspect-[4/3] w-full rounded-[14px] border border-[#E0E7DC] object-cover"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  className="flex-1 rounded-[10px] border-[1.5px] border-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#246427] bg-transparent hover:bg-[#F1F8E9] transition-colors"
+                                  onClick={() => {
+                                    setFacePreview(null);
+                                    setFaceImageFile(null);
+                                  }}
+                                >
+                                  Retake
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex-1 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                                  onClick={() => setStep(2)}
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                        <div className="flex justify-between gap-2 items-center">
-                          <span className="text-[#616161]">Face</span>
-                          <span className="text-[#246427] font-semibold">Captured ✓</span>
-                        </div>
-                        <div className="flex justify-between gap-2 items-center">
-                          <span className="text-[#616161]">Field Photo</span>
-                          {fieldPreviewUrl && (
-                            <img
-                              src={fieldPreviewUrl}
-                              alt=""
-                              className="h-10 w-10 rounded-md object-cover"
-                            />
-                          )}
-                        </div>
-                      </div>
-                      {existingFlags.length > 0 && (
-                        <div className="rounded-[10px] border border-[#FFE082] bg-[#FFF8E1] p-3 text-[0.875rem] text-[#B07D00]">
-                          <span className="font-semibold">Existing flags from check-in: </span>
-                          {existingFlags.join(', ')}
                         </div>
                       )}
-                      {!inRange && (
-                        <div className="flex gap-2 rounded-[10px] border border-[#FFE082] bg-[#FFF8E1] p-3 text-[0.875rem] text-[#B07D00]">
-                          <AlertTriangle className="h-5 w-5 shrink-0 text-[#B07D00]" />
-                          <p>
-                            Your location was flagged. Check-out will be submitted but team lead will be
-                            notified.
+
+                      {step === 2 && (
+                        <div className="space-y-4">
+                          <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Upload After Photo</h3>
+                          <p className="text-[0.875rem] text-[#616161]">
+                            Take a photo of the field AFTER completing work
                           </p>
+                          <input
+                            ref={fieldInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handleFieldFile}
+                          />
+                          {!fieldPreviewUrl ? (
+                            <button
+                              type="button"
+                              onClick={() => fieldInputRef.current?.click()}
+                              className="flex min-h-[200px] w-full flex-col items-center justify-center rounded-[14px] border border-dashed border-[#246427] bg-[#F9FBF7] transition-colors hover:bg-[#F1F8E9]"
+                            >
+                              <ImagePlus className="mb-2 h-14 w-14 text-[#246427]" />
+                              <span className="text-[0.875rem] text-[#616161]">
+                                Tap to capture or upload field photo
+                              </span>
+                            </button>
+                          ) : (
+                            <div className="relative">
+                              <button
+                                type="button"
+                                className="absolute right-2 top-2 z-10 rounded-full bg-white/90 p-1.5 shadow"
+                                onClick={() => {
+                                  setFieldPreviewUrl((prev) => {
+                                    if (prev) URL.revokeObjectURL(prev);
+                                    return null;
+                                  });
+                                  setFieldImageFile(null);
+                                }}
+                                aria-label="Remove photo"
+                              >
+                                <X className="h-4 w-4 text-[#C62828]" />
+                              </button>
+                              <img
+                                src={fieldPreviewUrl}
+                                alt="Field"
+                                className="max-h-64 w-full rounded-[14px] object-cover border border-[#E0E7DC]"
+                              />
+                              <p className="mt-2 text-[0.875rem] text-[#616161]">
+                                {fieldImageFile?.name} ({Math.round((fieldImageFile?.size || 0) / 1024)} KB)
+                              </p>
+                              <button
+                                type="button"
+                                className="mt-3 w-full rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
+                                onClick={() => setStep(3)}
+                              >
+                                Next
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
+
+                      {step === 3 && (
+                        <div className="space-y-4">
+                          <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Review & Check Out</h3>
+                          <div className="rounded-[10px] bg-[#F9FBF7] p-[16px] mb-[16px] text-[0.875rem] space-y-2 border border-[#E0E7DC]">
+                            <div className="flex justify-between gap-2">
+                              <span className="text-[#616161]">Task</span>
+                              <span className="font-medium text-[#212121] text-right">{task.title}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-[#616161]">Location</span>
+                              <span className="text-[#212121] text-right">{task.locationName}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-[#616161]">Checked In At</span>
+                              <span className="text-[#212121]">
+                                {attendanceRecord.checkInTime
+                                  ? new Date(attendanceRecord.checkInTime).toLocaleTimeString('en-US', {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                    hour12: true,
+                                  })
+                                  : '—'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-[#616161]">Time</span>
+                              <span className="text-[#212121]">
+                                {new Date().toLocaleTimeString('en-US', {
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-2 items-center">
+                              <span className="text-[#616161]">GPS</span>
+                              {inRange ? (
+                                <span className="rounded-full bg-[#E8F5E9] px-2 py-0.5 text-xs font-semibold text-[#246427] border border-[#A5D6A7]">
+                                  ✓ Within range ({distanceM}m)
+                                </span>
+                              ) : (
+                                <span className="rounded-full bg-[#FFF8E1] px-2 py-0.5 text-xs font-semibold text-[#B07D00] border border-[#FFE082]">
+                                  ⚠ {distanceM}m — flagged
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex justify-between gap-2 items-center">
+                              <span className="text-[#616161]">Face</span>
+                              <span className="text-[#246427] font-semibold">Captured ✓</span>
+                            </div>
+                            <div className="flex justify-between gap-2 items-center">
+                              <span className="text-[#616161]">Field Photo</span>
+                              {fieldPreviewUrl && (
+                                <img
+                                  src={fieldPreviewUrl}
+                                  alt=""
+                                  className="h-10 w-10 rounded-md object-cover"
+                                />
+                              )}
+                            </div>
+                          </div>
+                          {existingFlags.length > 0 && (
+                            <div className="rounded-[10px] border border-[#FFE082] bg-[#FFF8E1] p-3 text-[0.875rem] text-[#B07D00]">
+                              <span className="font-semibold">Existing flags from check-in: </span>
+                              {existingFlags.join(', ')}
+                            </div>
+                          )}
+                          {!inRange && (
+                            <div className="flex gap-2 rounded-[10px] border border-[#FFE082] bg-[#FFF8E1] p-3 text-[0.875rem] text-[#B07D00]">
+                              <AlertTriangle className="h-5 w-5 shrink-0 text-[#B07D00]" />
+                              <p>
+                                Your location was flagged. Check-out will be submitted but team lead will be
+                                notified.
+                              </p>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#C62828] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#b71c1c] transition-colors disabled:opacity-60"
+                            onClick={handleSubmit}
+                          >
+                            {submitting ? (
+                              <>
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                                Checking out...
+                              </>
+                            ) : (
+                              'CHECK OUT'
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {step > 0 && !result && (
                       <button
                         type="button"
-                        disabled={submitting}
-                        className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#C62828] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#b71c1c] transition-colors disabled:opacity-60"
-                        onClick={handleSubmit}
+                        className="mt-4 w-full text-[0.875rem] text-[#616161] hover:text-[#246427] transition-colors bg-transparent border-none text-center block"
+                        onClick={() => setStep((s) => Math.max(0, s - 1))}
                       >
-                        {submitting ? (
-                          <>
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                            Checking out...
-                          </>
-                        ) : (
-                          'CHECK OUT'
-                        )}
+                        Back
                       </button>
-                    </div>
-                  )}
-                </div>
-
-                {step > 0 && !result && (
-                  <button
-                    type="button"
-                    className="mt-4 w-full text-[0.875rem] text-[#616161] hover:text-[#246427] transition-colors bg-transparent border-none text-center block"
-                    onClick={() => setStep((s) => Math.max(0, s - 1))}
-                  >
-                    Back
-                  </button>
+                    )}
+                  </>
                 )}
               </>
-            )}
-            </>
             )}
           </motion.div>
         </motion.div>

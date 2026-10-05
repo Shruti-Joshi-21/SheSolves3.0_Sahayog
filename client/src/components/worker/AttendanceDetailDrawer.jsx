@@ -147,7 +147,7 @@ export default function AttendanceDetailDrawer({ isOpen, onClose, record, loadin
                     <span className="text-[#616161]">GPS</span>
                     <p className="font-mono text-xs text-[#212121]">
                       {record.checkInLocation?.latitude != null &&
-                      record.checkInLocation?.longitude != null
+                        record.checkInLocation?.longitude != null
                         ? `${record.checkInLocation.latitude}, ${record.checkInLocation.longitude}`
                         : '—'}
                     </p>
@@ -202,7 +202,7 @@ export default function AttendanceDetailDrawer({ isOpen, onClose, record, loadin
                         <span className="text-[#616161]">GPS</span>
                         <p className="font-mono text-xs text-[#212121]">
                           {record.checkOutLocation?.latitude != null &&
-                          record.checkOutLocation?.longitude != null
+                            record.checkOutLocation?.longitude != null
                             ? `${record.checkOutLocation.latitude}, ${record.checkOutLocation.longitude}`
                             : '—'}
                         </p>
