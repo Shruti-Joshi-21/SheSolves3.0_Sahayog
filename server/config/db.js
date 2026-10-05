@@ -17,3 +17,5 @@ async function connectDB() {
 }
 
 module.exports = connectDB;
+
+// MongoDB connection helper export
