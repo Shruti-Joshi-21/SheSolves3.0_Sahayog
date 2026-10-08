@@ -12,6 +12,6 @@ Status: ⬜ todo · 🟨 doing · ✅ pushed · 🚫 blocked (say on what)
 - ⬜ 
 
 ## Demo & deck — all
-- ⬜ Wake Render + HF Space 5 min before judging (`/api/health`, `/health`)
+- ⬜ Wake both Render services 5 min before judging (API `/api/health`, face service `/health`)
 - ⬜ Run the full demo on the deployed URL, not localhost
 - ⬜ Update slides with the Round 3 features + screenshots

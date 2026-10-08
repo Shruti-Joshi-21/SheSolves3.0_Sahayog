@@ -26,6 +26,6 @@ Ideas that fit Sahayog's data, cheapest first (all through `server/services/ai.s
 6. **Ask-your-data** for admins: question → aggregate stats JSON → plain-language answer.
 
 ## Demo
-- Deployed URLs: frontend `<vercel url>` · API `<render url>/api/health` · face service `<hf space url>/health`
+- Deployed URLs: frontend `https://she-solves3-0-sahayog.vercel.app` · API `https://sahayog-backend-3yus.onrender.com/api/health` · face service `https://shesolves3-0-sahayog.onrender.com/health`
 - Demo accounts: see `server/seed.js` (admin / team lead / field worker)
 - Demo story (2 min): <who clicks what, which challenge each step shows>

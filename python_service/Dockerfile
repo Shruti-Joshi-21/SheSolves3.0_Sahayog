@@ -1,11 +1,11 @@
-# Face recognition service — for a Hugging Face Docker Space (free CPU, 16 GB RAM).
+# Face recognition service — optional Docker deploy (e.g. Render with Language: Docker).
 # Uses the prebuilt dlib-bin Linux wheel, so nothing has to compile.
 FROM python:3.10-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Hugging Face Spaces run as a non-root user with uid 1000
+# Run as a non-root user
 RUN useradd -m -u 1000 user
 WORKDIR /home/user/app
 

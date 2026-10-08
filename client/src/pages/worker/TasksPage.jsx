@@ -217,7 +217,7 @@ export default function TasksPage() {
           <AnimatePresence mode="popLayout">
             {visibleTasks.map((task) => {
               const id = String(task._id);
-              const attState = taskAttendanceState(todayAttendance, task._id);
+              const attState = task.attendanceState ?? taskAttendanceState(todayAttendance, task._id);
               const inBuf = task.checkInBuffer ?? 15;
               const outBuf = task.checkOutBuffer ?? 15;
               const desc = task.description?.trim();

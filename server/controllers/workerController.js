@@ -111,110 +111,95 @@ function checkIsEarly(endTimeStr, now) {
   return { isEarly: minutes > 0, minutes: Math.max(0, minutes) };
 }
 
+function timeStrToMinutes(timeStr) {
+  const parts = String(timeStr || '').split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) || 0;
+  return Number.isNaN(h) ? null : h * 60 + m;
+}
+
+/**
+ * Picks the task for the worker dashboard hero card, plus the worker's attendance for that task.
+ * A task is finished for the worker once its report is submitted; finished tasks are skipped so
+ * the next ongoing/upcoming task shows instead.
+ * Priority: open check-in (any date) → today's and future tasks, earliest first (skipping today's
+ * tasks whose window already passed with no check-in, unless nothing else is left) → past tasks
+ * that were checked out but still need a report.
+ */
+async function selectCurrentTask(oid) {
+  const { start, end } = startEndOfToday();
+
+  const tasks = await Task.find({ assignedWorkers: { $in: [oid] }, status: 'ACTIVE', isDeleted: false })
+    .populate('createdBy', 'fullName')
+    .lean();
+  if (tasks.length === 0) return { task: null, attendance: null };
+
+  const taskIds = tasks.map((t) => t._id);
+  const [attRows, reportRows] = await Promise.all([
+    AttendanceRecord.find({
+      worker: oid,
+      task: { $in: taskIds },
+      checkInTime: { $exists: true, $ne: null },
+      isDeleted: false,
+    })
+      .sort({ checkInTime: -1 })
+      .lean(),
+    FieldReport.find({ worker: oid, task: { $in: taskIds } }).select('task').lean(),
+  ]);
+
+  const attendanceByTask = new Map();
+  for (const a of attRows) {
+    const key = String(a.task);
+    if (!attendanceByTask.has(key)) attendanceByTask.set(key, a);
+  }
+  const reportedTaskIds = new Set(reportRows.map((r) => String(r.task)));
+
+  const entries = tasks.map((task) => ({ task, attendance: attendanceByTask.get(String(task._id)) || null }));
+  const byDateThenStart = (a, b) =>
+    new Date(a.task.date) - new Date(b.task.date) ||
+    String(a.task.startTime || '').localeCompare(String(b.task.startTime || ''));
+  const pick = (entry) => ({
+    task: { ...entry.task, isUpcoming: startOfCalendarDay(entry.task.date).getTime() > start.getTime() },
+    attendance: entry.attendance,
+  });
+
+  const openCheckIn = entries
+    .filter((e) => e.attendance && !e.attendance.checkOutTime)
+    .sort((a, b) => new Date(b.attendance.checkInTime) - new Date(a.attendance.checkInTime))[0];
+  if (openCheckIn) return pick(openCheckIn);
+
+  const unfinished = entries.filter((e) => !reportedTaskIds.has(String(e.task._id)));
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const isMissedToday = (e) => {
+    if (e.attendance || new Date(e.task.date) > end) return false;
+    const endMinutes = timeStrToMinutes(e.task.endTime);
+    return endMinutes != null && nowMinutes > endMinutes + (e.task.checkOutBuffer ?? 15);
+  };
+
+  const todayAndLater = unfinished.filter((e) => new Date(e.task.date) >= start).sort(byDateThenStart);
+  const next = todayAndLater.find((e) => !isMissedToday(e));
+  if (next) return pick(next);
+  if (todayAndLater.length > 0) return pick(todayAndLater[todayAndLater.length - 1]);
+
+  const pendingReport = unfinished
+    .filter((e) => e.attendance && e.attendance.checkOutTime && new Date(e.task.date) < start)
+    .sort((a, b) => byDateThenStart(b, a))[0];
+  if (pendingReport) return pick(pendingReport);
+
+  return { task: null, attendance: null };
+}
+
 async function getDashboardData(req, res, next) {
   try {
     const workerId = req.user.userId;
     const oid = new mongoose.Types.ObjectId(workerId);
-    const { start, end } = startEndOfToday();
     const weekFrom = startOfLast7Days();
 
-    const workerTaskFilter = {
-      assignedWorkers: { $in: [oid] },
-      status: 'ACTIVE',
-      isDeleted: false,
-    };
-
-    let todayTask = await Task.findOne({
-      ...workerTaskFilter,
-      date: { $gte: start, $lte: end },
-    })
-      .sort({ date: 1 })
-      .populate('createdBy', 'fullName')
-      .lean();
-
-    let isUpcoming = false;
-
-    if (!todayTask) {
-      const now = new Date();
-      const laterToday = await Task.findOne({
-        ...workerTaskFilter,
-        date: { $gt: now, $lte: end },
-      })
-        .sort({ date: 1 })
-        .limit(1)
-        .populate('createdBy', 'fullName')
-        .lean();
-      if (laterToday) todayTask = laterToday;
-    }
-
-    if (!todayTask) {
-      const tomorrowStart = new Date(start);
-      tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-      const upcoming = await Task.findOne({
-        ...workerTaskFilter,
-        date: { $gte: tomorrowStart },
-      })
-        .sort({ date: 1 })
-        .limit(1)
-        .populate('createdBy', 'fullName')
-        .lean();
-      if (upcoming) {
-        todayTask = upcoming;
-        isUpcoming = true;
-      }
-    }
-
-    if (!todayTask) {
-      const upcomingAfterEnd = await Task.findOne({
-        ...workerTaskFilter,
-        date: { $gt: end },
-      })
-        .sort({ date: 1 })
-        .limit(1)
-        .populate('createdBy', 'fullName')
-        .lean();
-      if (upcomingAfterEnd) {
-        todayTask = upcomingAfterEnd;
-        isUpcoming = true;
-      }
-    }
-
-    if (!todayTask) {
-      const nextByClock = await Task.findOne({
-        ...workerTaskFilter,
-        date: { $gt: new Date() },
-      })
-        .sort({ date: 1 })
-        .limit(1)
-        .populate('createdBy', 'fullName')
-        .lean();
-      if (nextByClock) {
-        todayTask = nextByClock;
-        isUpcoming = startOfCalendarDay(nextByClock.date).getTime() > start.getTime();
-      }
-    }
-
-    if (!todayTask) {
-      const earliestActive = await Task.findOne(workerTaskFilter)
-        .sort({ date: 1 })
-        .limit(1)
-        .populate('createdBy', 'fullName')
-        .lean();
-      if (earliestActive) {
-        todayTask = earliestActive;
-        isUpcoming = startOfCalendarDay(earliestActive.date).getTime() > start.getTime();
-      }
-    }
-
-    if (todayTask) {
-      if (!isUpcoming) {
-        isUpcoming = startOfCalendarDay(todayTask.date).getTime() > start.getTime();
-      }
-      todayTask = { ...todayTask, isUpcoming };
-    }
+    const { task: todayTask, attendance: todayAttendance } = await selectCurrentTask(oid);
 
     const [
-      todayAttendance,
       weeklyAttendanceCount,
       totalTasksThisWeek,
       pendingLeaveCount,
@@ -223,14 +208,6 @@ async function getDashboardData(req, res, next) {
       reports,
       recentTaskRows,
     ] = await Promise.all([
-      AttendanceRecord.findOne({
-        worker: oid,
-        checkInTime: { $exists: true, $ne: null, $gte: start, $lte: end },
-        isDeleted: false,
-      })
-        .sort({ checkInTime: -1 })
-        .lean(),
-
       AttendanceRecord.countDocuments({
         worker: oid,
         checkInTime: { $gte: weekFrom },
@@ -326,15 +303,9 @@ async function getTodayAttendance(req, res, next) {
   try {
     const workerId = req.user.userId;
     const oid = new mongoose.Types.ObjectId(workerId);
-    const { start, end } = startEndOfToday();
 
-    const record = await AttendanceRecord.findOne({
-      worker: oid,
-      checkInTime: { $exists: true, $ne: null, $gte: start, $lte: end },
-      isDeleted: false,
-    })
-      .sort({ checkInTime: -1 })
-      .lean();
+    // Same task the dashboard hero card shows, so the polled state always matches the card
+    const { attendance: record } = await selectCurrentTask(oid);
 
     return sendSuccess(res, record, 'Today attendance');
   } catch (err) {
@@ -986,7 +957,14 @@ async function getWorkerTasks(req, res, next) {
       .select('title locationName date workType startTime endTime status reportFields')
       .lean();
 
-    return sendSuccess(res, { tasks }, 'Worker tasks');
+    // Only one report per task is allowed, so don't offer tasks that already have one
+    const reported = await FieldReport.find({ worker: oid, task: { $in: tasks.map((t) => t._id) } })
+      .select('task')
+      .lean();
+    const reportedIds = new Set(reported.map((r) => String(r.task)));
+    const pendingTasks = tasks.filter((t) => !reportedIds.has(String(t._id)));
+
+    return sendSuccess(res, { tasks: pendingTasks }, 'Worker tasks');
   } catch (err) {
     next(err);
   }
@@ -1018,22 +996,40 @@ async function getAllWorkerTasks(req, res, next) {
       .lean();
 
     const taskIds = tasksRaw.map((t) => t._id);
-    const reports =
+    const [reports, attRows] =
       taskIds.length === 0
-        ? []
-        : await FieldReport.find({ worker: oid, task: { $in: taskIds } })
-            .select('_id status task')
-            .lean();
+        ? [[], []]
+        : await Promise.all([
+            FieldReport.find({ worker: oid, task: { $in: taskIds } })
+              .select('_id status task')
+              .lean(),
+            AttendanceRecord.find({
+              worker: oid,
+              task: { $in: taskIds },
+              checkInTime: { $exists: true, $ne: null },
+              isDeleted: false,
+            })
+              .sort({ checkInTime: -1 })
+              .select('task checkInTime checkOutTime')
+              .lean(),
+          ]);
     const reportByTaskId = new Map(reports.map((r) => [String(r.task), r]));
+    const attendanceByTaskId = new Map();
+    for (const a of attRows) {
+      const key = String(a.task);
+      if (!attendanceByTaskId.has(key)) attendanceByTaskId.set(key, a);
+    }
 
     const tasks = tasksRaw.map((task) => {
       const report = reportByTaskId.get(String(task._id));
+      const att = attendanceByTaskId.get(String(task._id));
       const category = categorizeWorkerTask(task, dayStart, dayEnd);
       return {
         ...task,
         category,
         reportStatus: report?.status || null,
         reportId: report?._id || null,
+        attendanceState: !att ? 'NOT_CHECKED_IN' : att.checkOutTime ? 'COMPLETED' : 'CHECKED_IN',
       };
     });
 
