@@ -53,10 +53,11 @@ async function signupFieldWorker(req, res) {
 
     let encoding = null;
     try {
+      const pythonBase = process.env.PYTHON_SERVICE_URL || 'http://localhost:5001';
       const pythonResp = await axios.post(
-        'http://localhost:5001/register-face',
+        `${pythonBase}/register-face`,
         { imageUrl: faceImageUrl, userId: normalizedUsername },
-        { headers: { 'Content-Type': 'application/json' } }
+        { headers: { 'Content-Type': 'application/json' }, timeout: 60000 }
       );
       encoding = pythonResp?.data?.encoding;
     } catch (e) {

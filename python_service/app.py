@@ -273,5 +273,6 @@ def verify_face():
 
 
 if __name__ == "__main__":
-    app.run(port=5001, debug=True)
+    # PORT is set by hosts like Hugging Face Spaces (7860); local default stays 5001
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5001)), debug=os.environ.get("FLASK_DEBUG") == "1")
 # Biometric recognition service end

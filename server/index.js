@@ -14,6 +14,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Health check — Render uses this, and we hit it before the demo to wake the server
+app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/worker', require('./routes/workerRoutes'));
 app.use('/api/teamlead', require('./routes/teamleadRoutes'));
@@ -24,6 +27,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 
 app.use('/api/locations', require('./routes/location.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
+app.use('/api/ai', require('./routes/ai.routes'));
 
 app.use(errorHandler);
 
