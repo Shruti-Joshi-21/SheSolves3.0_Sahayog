@@ -3,3 +3,5 @@
  * The canonical app lives in `index.js` (also used by `npm start`).
  */
 require('./index');
+
+// Compatibility entrypoint end

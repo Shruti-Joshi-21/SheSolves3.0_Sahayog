@@ -260,15 +260,29 @@ Open three separate terminal windows:
 
 ---
 
+## 🏗️ System Architecture
+
+![Architecture](./5.png)
+
+---
+
 ## 📸 Screenshots
 
-> Add screenshots here after running the application. Suggested screens to capture:
-> - Landing page hero section
-> - Worker Dashboard with task cards and attendance status
-> - Mark Attendance wizard (GPS → Face → Photo steps)
-> - Team Lead Dashboard with stats cards
-> - Create Task form (multi-step with conflict detection)
-> - Admin Dashboard with Chart.js analytics panels
+### 🏠 Sahayog Landing Page
+
+![Sahayog Landing Page](./1.jpeg)
+
+### 👷 Worker Dashboard
+
+![Worker Dashboard](./2.jpeg)
+
+### 📍 Mark Attendance
+
+![Mark Attendance](./3.jpeg)
+
+### 📊 Admin Dashboard
+
+![Admin Dashboard](./4.jpeg)
 
 ---
 
