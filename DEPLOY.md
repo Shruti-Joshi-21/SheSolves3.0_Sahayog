@@ -24,7 +24,7 @@ Network Access → Add IP → `0.0.0.0/0` (Render and Hugging Face don't have fi
 New → Web Service → connect `SheSolves3.0_Sahayog` →
 - Root Directory: `server` · Build: `npm install` · Start: `npm start` · Instance: Free
 - Health Check Path: `/api/health`
-- Environment: `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `PYTHON_SERVICE_URL=https://<user>-<space>.hf.space`, `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-2.5-flash`
+- Environment: `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `PYTHON_SERVICE_URL=https://<user>-<space>.hf.space`, `GEMINI_API_KEY`, `GEMINI_MODEL=gemini-3.8-flash`
 - (Don't set `PORT` — Render provides it.)
 - Check: `https://<app>.onrender.com/api/health` → ok, and `/api/ai/health` → `"source": "ai"`.
 
