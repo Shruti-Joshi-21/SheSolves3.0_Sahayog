@@ -41,6 +41,7 @@ import {
   Menu,
 } from 'lucide-react';
 import api from '../../utils/api';
+import AdminTaskMap from '../../components/AdminTaskMap';
 import { useAuth } from '../../context/AuthContext';
 
 ChartJS.register(
@@ -2040,7 +2041,7 @@ const AdminDashboard = () => {
 
           {/* Map + alerts */}
           <motion.div {...sectionMotion(4)} className="grid grid-cols-1 lg:grid-cols-[60%_1fr] gap-[16px]">
-            <div className="bg-[#FFFFFF] border border-[#E0E7DC] rounded-[14px] px-[24px] py-[20px] shadow-[0_2px_12px_rgba(36,100,39,0.07)] overflow-hidden">
+            {/*<div className="bg-[#FFFFFF] border border-[#E0E7DC] rounded-[14px] px-[24px] py-[20px] shadow-[0_2px_12px_rgba(36,100,39,0.07)] overflow-hidden">
               <div className="flex items-center justify-between mb-[16px]">
                 <span className="text-[0.9375rem] font-[600] text-[#212121]">Active task locations today</span>
                 <span className="text-[0.8125rem] text-[#9E9E9E]">
@@ -2069,7 +2070,8 @@ const AdminDashboard = () => {
                   Completed
                 </span>
               </div>
-            </div>
+            </div>*/}
+            <AdminTaskMap />
 
             <div className="bg-[#FFFFFF] border border-[#E0E7DC] rounded-[14px] px-[24px] py-[20px] shadow-[0_2px_12px_rgba(36,100,39,0.07)] flex flex-col overflow-visible min-h-[220px]">
               <div className="text-[0.9375rem] font-[600] text-[#212121] mb-[16px]">System alerts</div>

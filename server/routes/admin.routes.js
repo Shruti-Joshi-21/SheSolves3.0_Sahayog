@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/admin.controller');
 const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 const { ROLES } = require('../utils/constants');
+const { getMapData } = require('../controllers/mapController');
 
 const adminOnly = [verifyToken, authorizeRoles(ROLES.ADMIN)];
 
@@ -37,5 +38,7 @@ router.get('/tasks-by-type', ...adminOnly, adminController.getTasksByType);
 router.get('/active-teamleads', ...adminOnly, adminController.getActiveTeamLeads);
 router.get('/impact-metrics', ...adminOnly, adminController.getImpactMetrics);
 router.get('/system-alerts', ...adminOnly, adminController.getSystemAlerts);
+
+router.get('/map-data', ...adminOnly, getMapData);
 
 module.exports = router;
