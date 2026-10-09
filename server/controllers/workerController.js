@@ -11,6 +11,7 @@ const { getDistanceInMeters } = require('../utils/haversine');
 const { sendSuccess, sendError } = require('../utils/response');
 const { ROLES } = require('../utils/constants');
 const { computeConfidence, gatherTrustContext } = require('../services/attendanceTrust.service');
+const { checkLiveness } = require('../services/ai/liveness');
 
 const TOTAL_LEAVES_PER_YEAR = 12;
 const WORKER_LEAVE_TYPES = ['SICK', 'CASUAL', 'EMERGENCY', 'OTHER'];
@@ -382,9 +383,17 @@ function readTrustFields(req) {
  * prevPoint overrides the "last known location" (check-out compares against its own check-in).
  */
 async function scoreAttendancePhase({ workerId, excludeRecordId, prevPoint, faceResult, faceUrl, trustFields, geofence, timing, current }) {
-  const ctx = await gatherTrustContext({ workerId, deviceId: trustFields.deviceId, excludeRecordId });
-  // Liveness AI is plugged in here (step 4); until then it's "not checked" = neutral
-  const liveness = { passed: null, confidence: null, reason: '', action: trustFields.livenessAction };
+  const [ctx, livenessResult] = await Promise.all([
+    gatherTrustContext({ workerId, deviceId: trustFields.deviceId, excludeRecordId }),
+    checkLiveness({ frame1Url: faceUrl, frame2Url: trustFields.livenessFrameUrl, action: trustFields.livenessAction }),
+  ]);
+  const liveness = {
+    passed: livenessResult.livenessPassed,
+    confidence: livenessResult.confidence,
+    reason: livenessResult.reason,
+    action: trustFields.livenessAction,
+    source: livenessResult.source,
+  };
   const trust = computeConfidence({
     face: { available: faceResult.available, distance: faceResult.distance, matched: faceResult.faceValid },
     liveness,
@@ -393,6 +402,7 @@ async function scoreAttendancePhase({ workerId, excludeRecordId, prevPoint, face
     device: { deviceId: trustFields.deviceId, ...ctx },
     travel: { prev: prevPoint || ctx.prevPoint, current },
   });
+  trust.signals.liveness.source = liveness.source; // 'ai' → UI shows an "AI" tag
   if (faceUrl || trustFields.livenessFrameUrl) {
     trust.signals.liveness.frames = [faceUrl, trustFields.livenessFrameUrl].filter(Boolean);
   }
