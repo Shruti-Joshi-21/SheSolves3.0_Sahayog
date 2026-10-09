@@ -1,5 +1,8 @@
 const express = require('express');
 const { generateJSON, Type, MODEL } = require('../services/ai.service');
+const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
+const { ROLES } = require('../utils/constants');
+const aiController = require('../controllers/ai.controller');
 
 const router = express.Router();
 
@@ -17,5 +20,13 @@ router.get('/health', async (req, res) => {
 });
 
 // New AI feature routes go below (AI lane). Keep handlers thin: call a function in services/ai/.
+
+// Ch4 — multilingual AI field report (team lead: own tasks only, checked in the controller)
+router.post(
+  '/reports/:fieldReportId/generate',
+  verifyToken,
+  authorizeRoles(ROLES.TEAM_LEAD, ROLES.ADMIN),
+  aiController.generateReport
+);
 
 module.exports = router;

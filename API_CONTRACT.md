@@ -90,3 +90,25 @@ Seed adds 4 workers (priya@, arjun@, sneha@, imran@sevasetu.gov.in / password123
 - Volunteer hours = check-in → check-out time of VERIFIED attendance.
 - `impactStory` comes from Gemini (cached 30 min); if Gemini is down it is a templated sentence (`source: 'fallback'`), so the card is never empty.
 - Logic: `server/services/impact.service.js`. The older `/api/admin/impact-metrics` is unchanged.
+
+## Ch4 — Multilingual AI field reports (Claude Code #2, AI lane)
+| Method | Path | Roles | Request | `data` returned | Status |
+|---|---|---|---|---|---|
+| POST | `/api/ai/reports/:fieldReportId/generate` | TEAM_LEAD (own tasks only), ADMIN | query: `lang` = `en` \| `hi` \| `mr` (default `en`), optional `refresh=1` to regenerate | AI report shape below | live |
+
+```js
+{
+  title, summary,
+  workDone: [String], quantities: [{ label, value, unit }], issuesFound: [String],
+  evidenceAssessment: { photosMatchTask: true | false | null /* null = not checked (fallback) */, notes },
+  attendanceNote, recommendations: [String],
+  language, lang, generatedAt, source: 'ai' | 'fallback',
+  evidenceImages: [url],   // photos the AI looked at: ≤3 report photos, then before/after attendance photos
+  cached: Boolean          // true = returned from FieldReport.aiReport without calling Gemini
+}
+```
+- Every string is written in `lang` (Hindi/Marathi in Devanagari); numbers, units and names are kept as given.
+- Saved to `FieldReport.aiReport`, so `GET /api/teamlead/field-reports/:id` already includes the last generated report.
+- Cache: the saved report is returned instantly if it has the same `lang` and `source: 'ai'`. A saved fallback is always regenerated.
+- If Gemini is down, a templated report is built from the raw data in the same language (`source: 'fallback'`). Takes ~15–35 s with photos.
+- Logic: `server/services/ai/reportGenerator.js`.
