@@ -110,5 +110,9 @@ Seed adds 4 workers (priya@, arjun@, sneha@, imran@sevasetu.gov.in / password123
 - Every string is written in `lang` (Hindi/Marathi in Devanagari); numbers, units and names are kept as given.
 - Saved to `FieldReport.aiReport`, so `GET /api/teamlead/field-reports/:id` already includes the last generated report.
 - Cache: the saved report is returned instantly if it has the same `lang` and `source: 'ai'`. A saved fallback is always regenerated.
-- If Gemini is down, a templated report is built from the raw data in the same language (`source: 'fallback'`). Takes ~15–35 s with photos.
+- Gemini overload (503/429) on `GEMINI_MODEL` → `ai.service` retries on `GEMINI_FALLBACK_MODEL` (default `gemini-3.5-flash`, `off` disables); the generator then retries once more after 3 s. Only if all fail is a templated report built from the raw data in the same language (`source: 'fallback'`). Takes ~15–35 s with photos, worst case ~80 s.
 - Logic: `server/services/ai/reportGenerator.js`.
+
+**Admin inbox (Ch4 extension, additive).** `GET /api/admin/reports` and `PATCH /api/admin/reports/:id/read` now also return per report:
+`taskTitle, workType, locationName, worker: { _id, fullName }, forwardedToAdmin, forwardedAt, forwardNote /* team lead's note from AdminReport */, aiReport /* same shape as above, or null */`.
+The admin sees the latest AI report on the field report (if the lead regenerates it in another language, the admin sees that one).

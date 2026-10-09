@@ -3,6 +3,7 @@ const Task = require('../models/Task');
 const AttendanceRecord = require('../models/AttendanceRecord');
 const LeaveRequest = require('../models/LeaveRequest');
 const FieldReport = require('../models/FieldReport');
+const AdminReport = require('../models/AdminReport');
 const Notification = require('../models/Notification');
 const { ROLES } = require('../utils/constants');
 const { sendSuccess, sendError } = require('../utils/response');
@@ -46,7 +47,7 @@ function defaultPeriodLabel(createdAt) {
   return `${start.toLocaleDateString('en-US', opts)}–${d.toLocaleDateString('en-US', { day: 'numeric' })}`;
 }
 
-function formatReportDoc(r, taskLean) {
+function formatReportDoc(r, taskLean, forwardNote) {
   const task = taskLean || r.task;
   const submittedBy = r.submittedBy || task?.createdBy || r.worker;
   const attachments =
@@ -67,7 +68,25 @@ function formatReportDoc(r, taskLean) {
     updatedAt: r.updatedAt,
     status: r.status,
     task: task?._id || r.task,
+    // Ch4 — forwarded AI report + context for the admin inbox
+    taskTitle: task?.title || '',
+    workType: task?.workType || '',
+    locationName: task?.locationName || '',
+    worker: r.worker ? { _id: r.worker._id, fullName: r.worker.fullName } : null,
+    forwardedToAdmin: !!r.forwardedToAdmin,
+    forwardedAt: r.forwardedAt || null,
+    forwardNote: forwardNote || '',
+    aiReport: r.aiReport || null,
   };
+}
+
+// Team lead's forwarding note per field report (latest AdminReport wins)
+async function forwardNotesByReport(reportIds) {
+  const rows = await AdminReport.find({ originalReportId: { $in: reportIds } })
+    .sort({ forwardedAt: 1 })
+    .select('originalReportId summary')
+    .lean();
+  return new Map(rows.map((a) => [String(a.originalReportId), a.summary]));
 }
 
 async function buildAttendanceMatch(query) {
@@ -700,14 +719,15 @@ const getReports = async (req, res) => {
       .populate('worker', 'fullName username')
       .populate({
         path: 'task',
-        select: 'createdBy title workType',
+        select: 'createdBy title workType locationName',
         populate: { path: 'createdBy', select: 'fullName username _id' },
       })
       .populate('submittedBy', 'fullName username')
       .sort({ createdAt: -1 })
       .lean();
 
-    const reports = rows.map((r) => formatReportDoc(r, r.task));
+    const notes = await forwardNotesByReport(rows.map((r) => r._id));
+    const reports = rows.map((r) => formatReportDoc(r, r.task, notes.get(String(r._id))));
     return sendSuccess(res, { reports }, 'Success');
   } catch (error) {
     return sendError(res, error.message || 'Failed to load reports', 500);
@@ -724,13 +744,14 @@ const markReportRead = async (req, res) => {
       .populate('worker', 'fullName username')
       .populate({
         path: 'task',
-        select: 'createdBy title workType',
+        select: 'createdBy title workType locationName',
         populate: { path: 'createdBy', select: 'fullName username _id' },
       })
       .populate('submittedBy', 'fullName username')
       .lean();
     if (!report) return sendError(res, 'Report not found', 404);
-    return sendSuccess(res, { report: formatReportDoc(report, report.task) }, 'Success');
+    const notes = await forwardNotesByReport([report._id]);
+    return sendSuccess(res, { report: formatReportDoc(report, report.task, notes.get(String(report._id))) }, 'Success');
   } catch (error) {
     return sendError(res, error.message || 'Failed to update report', 500);
   }

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Loader2, Printer, RefreshCw, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../../utils/api.js';
 import AiReportDocument from './AiReportDocument.jsx';
+import PrintableReport from './PrintableReport.jsx';
 
 const LANG_OPTIONS = [
   { value: 'en', label: 'English' },
@@ -13,20 +13,8 @@ const LANG_OPTIONS = [
 
 const LOADING_STEPS = ['Analysing report and photos…', 'Checking before / after evidence…', 'Writing the report…'];
 
-// Print: only the portal copy is shown; everything else on the page is hidden.
-const PRINT_CSS = `
-@media screen { .ai-report-print-root { display: none; } }
-@media print {
-  @page { margin: 14mm; }
-  body > *:not(.ai-report-print-root) { display: none !important; }
-  .ai-report-print-root { display: block !important; }
-  .ai-report-print-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .ai-report-print-root .ai-report-doc { border: none; padding: 0; }
-  .ai-report-print-root section { break-inside: avoid; }
-}`;
-
 /**
- * Challenge 4 — "✨ Generate AI report" for a field report (Team Lead detail view).
+ * Challenge 4 — "Generate AI report" for a field report (Team Lead detail view).
  * Shows the saved report (FieldReport.aiReport) right away if there is one.
  */
 const AiReportPanel = ({ fieldReport }) => {
@@ -80,7 +68,6 @@ const AiReportPanel = ({ fieldReport }) => {
 
   return (
     <div className="space-y-3">
-      <style>{PRINT_CSS}</style>
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-[0.75rem] font-bold uppercase tracking-wider text-[#616161]">
           <Sparkles className="h-3.5 w-3.5 text-[#246427]" /> AI Report
@@ -127,7 +114,7 @@ const AiReportPanel = ({ fieldReport }) => {
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          {loading ? 'Generating…' : sameLang ? 'Regenerate' : '✨ Generate AI report'}
+          {loading ? 'Generating…' : sameLang ? 'Regenerate' : 'Generate AI report'}
         </button>
       </div>
 
@@ -136,7 +123,7 @@ const AiReportPanel = ({ fieldReport }) => {
           <p className="flex items-center gap-2 text-sm font-medium text-[#246427]">
             <Loader2 className="h-4 w-4 animate-spin" /> {LOADING_STEPS[step]}
           </p>
-          <p className="text-xs text-[#9E9E9E]">Gemini is reading the photos — this usually takes 15–30 seconds.</p>
+          <p className="text-xs text-[#9E9E9E]">AI is reading the photos - this usually takes 15–30 seconds.</p>
           <div className="space-y-2">
             {[90, 75, 60].map((w) => (
               <div key={w} className="h-3 animate-pulse rounded-full bg-[#E0E7DC]" style={{ width: `${w}%` }} />
@@ -155,15 +142,11 @@ const AiReportPanel = ({ fieldReport }) => {
         </div>
       )}
 
-      {report &&
-        !loading &&
-        createPortal(
-          <div className="ai-report-print-root" style={{ fontFamily: "'Outfit', 'Nirmala UI', 'Noto Sans Devanagari', sans-serif" }}>
-            <p style={{ fontSize: 11, color: '#616161', marginBottom: 8 }}>Sahayog · Field report{fieldReport?.task?.title ? ` · ${fieldReport.task.title}` : ''}</p>
-            <AiReportDocument report={report} meta={meta} />
-          </div>,
-          document.body
-        )}
+      {report && !loading && (
+        <PrintableReport heading={`Sahayog · Field report${fieldReport?.task?.title ? ` · ${fieldReport.task.title}` : ''}`}>
+          <AiReportDocument report={report} meta={meta} />
+        </PrintableReport>
+      )}
     </div>
   );
 };

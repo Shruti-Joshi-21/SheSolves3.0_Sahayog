@@ -12,7 +12,9 @@ require('../../models/User'); // registered for populate()
 require('../../models/Task');
 const { generateJSON, Type } = require('../ai.service');
 
-const REPORT_TIMEOUT_MS = 45000; // vision over up to 5 photos
+const REPORT_TIMEOUT_MS = 40000; // vision over up to 5 photos (ai.service tries a 2nd model inside this)
+const RETRY_DELAY_MS = 3000;
+const RETRY_TIMEOUT_MS = 30000; // 40 + 3 + 30 s stays under the UI's 90 s request timeout
 const MAX_REPORT_IMAGES = 3; // + before/after attendance photos = generateJSON's 5-image cap
 
 const LANGS = { en: 'English', hi: 'Hindi (Devanagari script)', mr: 'Marathi (Devanagari script)' };
@@ -214,14 +216,19 @@ async function generateFieldReport(fieldReportId, lang = 'en') {
     imageLabels.push('AFTER photo taken at check-out');
   }
 
-  const result = await generateJSON({
+  const request = {
     system: SYSTEM,
     prompt: buildPrompt(ctx, language, imageLabels),
     imageUrls,
     schema: SCHEMA,
     fallback: buildFallback(ctx, language),
-    timeoutMs: REPORT_TIMEOUT_MS,
-  });
+  };
+  let result = await generateJSON({ ...request, timeoutMs: REPORT_TIMEOUT_MS });
+  if (result.source !== 'ai') {
+    // Gemini overload spikes are usually short — one more try before the templated report
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    result = await generateJSON({ ...request, timeoutMs: RETRY_TIMEOUT_MS });
+  }
 
   const aiReport = {
     ...result,
