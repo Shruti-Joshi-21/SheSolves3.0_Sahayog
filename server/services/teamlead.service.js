@@ -8,6 +8,7 @@ const TaskAssignment = require('../models/TaskAssignment');
 const AdminReport = require('../models/AdminReport');
 const { LEAVE_STATUS, ATTENDANCE_STATUS } = require('../utils/constants');
 const haversine = require('../utils/haversine');
+const { rankWorkers, resolveRequiredSkills } = require('./workerMatch.service');
 
 const toName = (user) => user?.fullName || '';
 const initialsFromName = (fullName = '') =>
@@ -148,6 +149,7 @@ const createTask = async (teamLeadId, body) => {
     title: body.title,
     description: body.description || '',
     workType: body.workType,
+    requiredSkills: resolveRequiredSkills(body.workType, Array.isArray(body.requiredSkills) ? body.requiredSkills : []),
     locationName: body.locationName,
     latitude: Number(body.latitude),
     longitude: Number(body.longitude),
@@ -175,8 +177,11 @@ const updateTaskStatus = (teamLeadId, taskId, status) =>
     .populate('assignedWorkers', 'fullName')
     .lean();
 
-const getAvailableWorkers = async (teamLeadId, date, startTime, endTime) => {
-  const workers = await getWorkersByTeamLead(teamLeadId);
+// taskContext ({ workType, requiredSkills, latitude, longitude }) is optional — it drives the match score
+const getAvailableWorkers = async (teamLeadId, date, startTime, endTime, taskContext = {}) => {
+  const workers = await User.find({ role: 'FIELD_WORKER', isDeleted: false, assignedTeamLead: teamLeadId })
+    .select('_id fullName skills experienceYears languages')
+    .lean();
   if (!workers.length) return [];
 
   const dayStart = startOfDay(date);
@@ -238,13 +243,17 @@ const getAvailableWorkers = async (teamLeadId, date, startTime, endTime) => {
     });
   });
 
-  return available.map((worker) => ({
+  const base = available.map((worker) => ({
     _id: worker._id,
     name: toName(worker),
     initials: initialsFromName(toName(worker)),
     workHistory: Array.from(workHistoryMap[String(worker._id)] || []),
     weeklyHours: Number((weeklyHours[String(worker._id)] || 0).toFixed(1)),
+    skills: worker.skills || [],
+    experienceYears: worker.experienceYears || 0,
+    languages: worker.languages || [],
   }));
+  return rankWorkers(base, taskContext, completedTasks);
 };
 
 const searchLocation = async (q) => {

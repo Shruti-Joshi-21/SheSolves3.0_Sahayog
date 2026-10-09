@@ -1,4 +1,5 @@
 const teamleadService = require('../services/teamlead.service');
+const ratingService = require('../services/rating.service');
 const { sendSuccess, sendError } = require('../utils/response');
 const { LEAVE_STATUS } = require('../utils/constants');
 
@@ -59,9 +60,15 @@ const updateTaskStatus = async (req, res, next) => {
 
 const getAvailableWorkers = async (req, res, next) => {
   try {
-    const { date, startTime, endTime } = req.query;
+    const { date, startTime, endTime, workType, requiredSkills, latitude, longitude } = req.query;
     if (!date || !startTime || !endTime) return sendError(res, 'date, startTime and endTime are required', 400);
-    const data = await teamleadService.getAvailableWorkers(getTeamLeadId(req), date, startTime, endTime);
+    const taskContext = {
+      workType: workType || '',
+      requiredSkills: requiredSkills ? String(requiredSkills).split(',').map((x) => x.trim()).filter(Boolean) : [],
+      latitude,
+      longitude,
+    };
+    const data = await teamleadService.getAvailableWorkers(getTeamLeadId(req), date, startTime, endTime, taskContext);
     return sendSuccess(res, data, 'Available workers fetched');
   } catch (error) {
     return next(error);
@@ -168,6 +175,24 @@ const forwardReportToAdmin = async (req, res, next) => {
   }
 };
 
+const getTaskRatings = async (req, res, next) => {
+  try {
+    const data = await ratingService.getTaskRatings(getTeamLeadId(req), req.params.taskId);
+    return sendSuccess(res, data, 'Task ratings fetched');
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const saveTaskRatings = async (req, res, next) => {
+  try {
+    const data = await ratingService.upsertTaskRatings(getTeamLeadId(req), req.params.taskId, req.body.ratings);
+    return sendSuccess(res, data, 'Ratings saved');
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getDashboardSummary,
   getTasks,
@@ -184,4 +209,6 @@ module.exports = {
   getFieldReports,
   getFieldReportById,
   forwardReportToAdmin,
+  getTaskRatings,
+  saveTaskRatings,
 };

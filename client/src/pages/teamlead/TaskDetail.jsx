@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Calendar, Clock, Radio, User, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Radio, User, Users, Star, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import api from '../../utils/api.js';
 import { useAuth } from '../../context/AuthContext';
 
@@ -195,6 +196,14 @@ export default function TaskDetail() {
                 {task.createdBy?.fullName ?? '—'}
               </p>
             </div>
+
+            {workers.length > 0 ? (
+              <RateWorkersPanel
+                taskId={task._id}
+                status={task.status}
+                onCompleted={(updated) => setTask((prev) => ({ ...prev, status: updated?.status || 'COMPLETED' }))}
+              />
+            ) : null}
           </div>
         ) : null}
       </motion.div>
@@ -202,3 +211,159 @@ export default function TaskDetail() {
   );
 }
 
+function StarInput({ value, onChange }) {
+  const [hover, setHover] = useState(0);
+  return (
+    <div className="flex items-center gap-0.5" onMouseLeave={() => setHover(0)}>
+      {[1, 2, 3, 4, 5].map((n) => {
+        const on = n <= (hover || value || 0);
+        return (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${n} star${n === 1 ? '' : 's'}`}
+            onMouseEnter={() => setHover(n)}
+            onClick={() => onChange(n)}
+            className="p-0.5"
+          >
+            <Star className={`w-5 h-5 transition-colors ${on ? 'fill-[#F8AC3B] text-[#F8AC3B]' : 'text-gray-300'}`} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function RateWorkersPanel({ taskId, status, onCompleted }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [completing, setCompleting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      try {
+        const response = await api.get(`/teamlead/tasks/${taskId}/ratings`);
+        const data = response.data?.data;
+        if (!cancelled) setRows(data?.workers || []);
+      } catch (err) {
+        if (!cancelled) toast.error(err.response?.data?.message || 'Failed to load ratings');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId, status]);
+
+  const update = (workerId, patch) =>
+    setRows((prev) => prev.map((r) => (String(r.workerId) === String(workerId) ? { ...r, ...patch, dirty: true } : r)));
+
+  const markCompleted = async () => {
+    setCompleting(true);
+    try {
+      const response = await api.patch(`/teamlead/tasks/${taskId}/status`, { status: 'COMPLETED' });
+      toast.success('Task marked as completed');
+      onCompleted(response.data?.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update task');
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  const save = async () => {
+    const ratings = rows
+      .filter((r) => r.dirty && r.stars)
+      .map((r) => ({ workerId: r.workerId, stars: r.stars, comment: r.comment || '' }));
+    if (!ratings.length) return toast.info('Pick stars for at least one worker');
+    setSaving(true);
+    try {
+      const response = await api.post(`/teamlead/tasks/${taskId}/ratings`, { ratings });
+      setRows(response.data?.data?.workers || rows);
+      toast.success(`Saved ${ratings.length} rating${ratings.length === 1 ? '' : 's'}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save ratings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const isCompleted = status === 'COMPLETED';
+
+  return (
+    <div className="bg-white rounded-xl border border-[#e8e0d0] p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-[#1a4a1a] flex items-center gap-2">
+          <Star className="w-4 h-4 text-[#1a4a1a]/70" />
+          Rate workers
+        </h2>
+        {isCompleted ? (
+          <span className="text-xs text-gray-400">Ratings improve future worker recommendations for this work type</span>
+        ) : null}
+      </div>
+
+      {!isCompleted ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#faeeda] rounded-lg px-4 py-3">
+          <p className="text-sm text-[#633806]">Workers can be rated once the task is completed.</p>
+          {status === 'ACTIVE' ? (
+            <button
+              type="button"
+              onClick={markCompleted}
+              disabled={completing}
+              className="bg-[#1a4a1a] hover:bg-[#2d6b2d] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {completing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Mark completed
+            </button>
+          ) : null}
+        </div>
+      ) : loading ? (
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-14 w-full bg-gray-200 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="border border-[#e8e0d0] rounded-xl overflow-hidden">
+            {rows.map((r) => (
+              <div
+                key={r.workerId}
+                className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3 border-b border-[#e8e0d0] last:border-0"
+              >
+                <div className="flex items-center gap-2 sm:w-44 shrink-0">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a4a1a] text-[10px] font-semibold text-white">
+                    {initials(r.name || '')}
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 truncate">{r.name}</span>
+                </div>
+                <StarInput value={r.stars} onChange={(n) => update(r.workerId, { stars: n })} />
+                <input
+                  className="flex-1 min-w-0 border border-[#e8e0d0] rounded-lg px-3 py-1.5 text-sm text-gray-800 focus:outline-none focus:border-[#1a4a1a] transition-colors placeholder:text-gray-300"
+                  placeholder="Comment (optional)"
+                  maxLength={300}
+                  value={r.comment || ''}
+                  onChange={(e) => update(r.workerId, { comment: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving || !rows.some((r) => r.dirty)}
+            className="bg-[#1a4a1a] hover:bg-[#2d6b2d] text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Save ratings
+          </button>
+        </>
+      )}
+    </div>
+  );
+}

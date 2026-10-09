@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import api from '../../utils/api.js';
 import { useAuth } from '../../context/AuthContext';
-import { MapPin, Plus, Loader2, Check } from 'lucide-react';
+import { MapPin, Plus, Loader2, Check, Star, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 const WORK_TYPE_OPTIONS = [
   'Waste Collection',
@@ -15,6 +15,37 @@ const WORK_TYPE_OPTIONS = [
   'Survey Drive',
   'Other',
 ];
+
+const SKILL_OPTIONS = [
+  'waste segregation',
+  'tree plantation',
+  'beach cleanup',
+  'composting',
+  'community awareness',
+  'water testing',
+  'data collection',
+  'first aid',
+];
+
+// Mirrors WORK_TYPE_SKILLS in server/utils/constants.js
+const WORK_TYPE_SKILLS = {
+  'Waste Collection': ['waste segregation'],
+  'Recycling Drive': ['waste segregation', 'composting'],
+  'Awareness Campaign': ['community awareness'],
+  'Shoreline Cleanup': ['beach cleanup', 'waste segregation'],
+  'Tree Plantation': ['tree plantation'],
+  'Survey Drive': ['data collection'],
+  Other: [],
+};
+
+const BREAKDOWN_LABELS = {
+  skills: 'Skill match',
+  rating: 'Performance rating',
+  experience: 'Experience',
+  reliability: 'Attendance reliability',
+  workload: 'Workload',
+  proximity: 'Proximity',
+};
 
 const RADIUS_PRESETS = [100, 200, 300, 500];
 
@@ -58,7 +89,10 @@ const CreateTask = () => {
     endTime: '',
     checkInBuffer: 15,
     checkOutBuffer: 15,
+    requiredSkills: [],
   });
+  const [expandedWorker, setExpandedWorker] = useState(null);
+  const [topCount, setTopCount] = useState(0); // 0 = show all workers
   const [reportFields, setReportFields] = useState([
     { fieldName: 'Waste collected (kg)', fieldType: 'Number' },
     { fieldName: 'Area covered (sq m)', fieldType: 'Number' },
@@ -87,9 +121,18 @@ const CreateTask = () => {
       if (currentStep !== 2 || !formData.date || !formData.startTime || !formData.endTime) return;
       setIsWorkerFetching(true);
       try {
-        const response = await api.get(
-          `/teamlead/available-workers?date=${formData.date}&startTime=${formData.startTime}&endTime=${formData.endTime}`
-        );
+        const params = new URLSearchParams({
+          date: formData.date,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          workType: formData.workType,
+          requiredSkills: formData.requiredSkills.join(','),
+        });
+        if (formData.latitude !== '' && formData.longitude !== '') {
+          params.set('latitude', formData.latitude);
+          params.set('longitude', formData.longitude);
+        }
+        const response = await api.get(`/teamlead/available-workers?${params.toString()}`);
         const { data } = response.data;
         setAvailableWorkers(data || []);
       } catch (err) {
@@ -99,7 +142,32 @@ const CreateTask = () => {
       }
     };
     loadWorkers();
-  }, [currentStep, formData.date, formData.startTime, formData.endTime]);
+  }, [currentStep, formData.date, formData.startTime, formData.endTime, formData.workType, formData.requiredSkills, formData.latitude, formData.longitude]);
+
+  const visibleWorkers = topCount ? availableWorkers.slice(0, topCount) : availableWorkers;
+
+  const changeTopCount = (count) => {
+    setTopCount(count);
+    // Workers hidden by the Top-N filter must not stay assigned
+    if (count) {
+      const visibleIds = new Set(availableWorkers.slice(0, count).map((w) => w._id));
+      setSelectedWorkers((prev) => prev.filter((id) => visibleIds.has(id)));
+    }
+  };
+
+  const autoAssignTop = () => {
+    const top = visibleWorkers.map((w) => w._id);
+    setSelectedWorkers(top);
+    toast.success(`Assigned top ${top.length} recommended worker${top.length === 1 ? '' : 's'}`);
+  };
+
+  const toggleSkill = (skill) =>
+    setFormData((prev) => ({
+      ...prev,
+      requiredSkills: prev.requiredSkills.includes(skill)
+        ? prev.requiredSkills.filter((s) => s !== skill)
+        : [...prev.requiredSkills, skill],
+    }));
 
   const submit = async () => {
     if (!reportFields.length) return;
@@ -175,7 +243,9 @@ const CreateTask = () => {
               <select
                 className="w-full border border-[#e8e0d0] rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:border-[#1a4a1a] transition-colors"
                 value={formData.workType}
-                onChange={(e) => setFormData({ ...formData, workType: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, workType: e.target.value, requiredSkills: WORK_TYPE_SKILLS[e.target.value] || [] })
+                }
               >
                 <option value="">Select work type</option>
                 {WORK_TYPE_OPTIONS.map((opt) => (
@@ -185,6 +255,31 @@ const CreateTask = () => {
                 ))}
               </select>
             </div>
+            {formData.workType ? (
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1.5 block">Skills needed (used to rank workers)</label>
+                <div className="flex flex-wrap gap-2">
+                  {SKILL_OPTIONS.map((skill) => {
+                    const on = formData.requiredSkills.includes(skill);
+                    return (
+                      <button
+                        key={skill}
+                        type="button"
+                        onClick={() => toggleSkill(skill)}
+                        className={
+                          on
+                            ? 'bg-[#1a4a1a] text-white text-xs font-medium px-3 py-1.5 rounded-full'
+                            : 'border border-dashed border-[#c5deb0] text-[#2d6b2d] bg-[#f9fbf6] text-xs px-3 py-1.5 rounded-full hover:bg-[#eaf3de] transition-colors font-normal'
+                        }
+                      >
+                        {on ? '✓ ' : ''}
+                        {skill}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             <div>
               <label className="text-xs font-medium text-gray-600 mb-1.5 block">Field location</label>
               <input
@@ -331,70 +426,61 @@ const CreateTask = () => {
                   <div key={i} className="h-14 w-full bg-gray-200 rounded-xl animate-pulse" />
                 ))}
               </div>
+            ) : availableWorkers.length === 0 ? (
+              <div className="border border-[#e8e0d0] rounded-xl p-6 text-center text-sm text-gray-400">
+                No workers are free in this time window
+              </div>
             ) : (
-              <div className="border border-[#e8e0d0] rounded-xl overflow-hidden">
-                {availableWorkers.map((w) => (
-                  <button
-                    key={w._id}
-                    type="button"
-                    onClick={() =>
-                      setSelectedWorkers((prev) =>
-                        prev.includes(w._id) ? prev.filter((id) => id !== w._id) : [...prev, w._id]
-                      )
-                    }
-                    className={`w-full flex items-center gap-3 px-4 py-3 border-b border-[#e8e0d0] last:border-0 text-left transition-colors ${
-                      selectedWorkers.includes(w._id) ? 'bg-transparent' : 'bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className={`w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        selectedWorkers.includes(w._id)
-                          ? 'bg-[#1a4a1a] border-[#1a4a1a]'
-                          : 'border-gray-300 bg-white'
-                      }`}
-                    >
-                      {selectedWorkers.includes(w._id) ? (
-                        <Check className="w-4 h-4 text-white" />
-                      ) : null}
-                    </div>
-
-                    <div className="w-7 h-7 rounded-full bg-[#eaf3de] text-[#27500A] text-xs font-medium flex items-center justify-center shrink-0">
-                      {String(w.name || '')
-                        .trim()
-                        .split(/\s+/)
-                        .filter(Boolean)
-                        .reduce((acc, part, i, arr) => (i === 0 || i === arr.length - 1 ? acc + part[0].toUpperCase() : acc), '')
-                        .slice(0, 2) || '?'}
-                    </div>
-
-                    <span className="text-sm font-normal text-gray-800 flex-1">{w.name}</span>
-
-                    <div className="flex gap-1 flex-wrap max-w-[200px] justify-end">
-                      {(w.workHistory || []).slice(0, 3).map((type) => (
-                        <span
-                          key={type}
-                          className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-normal shrink-0"
-                        >
-                          {type}
-                        </span>
-                      ))}
-                      {(w.workHistory || []).length === 0 && (
-                        <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-normal shrink-0">
-                          No history
-                        </span>
-                      )}
-                    </div>
-
-                    <span
-                      className={`text-xs font-normal shrink-0 ${
-                        (w.weeklyHours || 0) > 35 ? 'text-amber-600 font-medium' : 'text-gray-400'
-                      }`}
-                    >
-                      {(w.weeklyHours || 0) > 35 ? '⚠ ' : ''}
-                      {w.weeklyHours || 0}h/wk
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-[#f9fbf6] border border-[#c5deb0] rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm text-[#27500A]">
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>
+                      Ranked by skills, ratings, experience, reliability, workload and distance
+                      {formData.workType ? ` for ${formData.workType}` : ''}
                     </span>
-                  </button>
-                ))}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="border border-[#e8e0d0] rounded-lg px-2 py-1.5 text-sm text-gray-800 bg-white focus:outline-none focus:border-[#1a4a1a]"
+                      value={topCount}
+                      onChange={(e) => changeTopCount(Number(e.target.value))}
+                    >
+                      <option value={0}>All workers</option>
+                      {availableWorkers.map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          Top {i + 1}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={autoAssignTop}
+                      disabled={!topCount}
+                      title={topCount ? `Assign the top ${topCount}` : 'Pick Top 1, 2, 3… first'}
+                      className="bg-[#1a4a1a] hover:bg-[#2d6b2d] text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Auto-assign
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-[#e8e0d0] rounded-xl overflow-hidden">
+                  {visibleWorkers.map((w) => (
+                    <WorkerMatchCard
+                      key={w._id}
+                      worker={w}
+                      selected={selectedWorkers.includes(w._id)}
+                      expanded={expandedWorker === w._id}
+                      onToggle={() =>
+                        setSelectedWorkers((prev) =>
+                          prev.includes(w._id) ? prev.filter((id) => id !== w._id) : [...prev, w._id]
+                        )
+                      }
+                      onExpand={() => setExpandedWorker((prev) => (prev === w._id ? null : w._id))}
+                    />
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex gap-2">
@@ -521,6 +607,123 @@ const CreateTask = () => {
     </div>
   );
 };
+
+function scoreColor(score) {
+  if (score >= 30) return 'bg-[#246427]';
+  if (score >= 15) return 'bg-[#F8AC3B]';
+  return 'bg-[#C62828]';
+}
+
+function WorkerMatchCard({ worker: w, selected, expanded, onToggle, onExpand }) {
+  const score = Math.max(0, Math.min(100, w.matchScore ?? 0));
+  const rs = w.ratingSummary || {};
+  const ratingValue = rs.countForWorkType ? rs.avgForWorkType : rs.avgOverall;
+  const ratingCount = rs.countForWorkType || rs.countOverall || 0;
+  const initialsText =
+    String(w.name || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .reduce((acc, part, i, arr) => (i === 0 || i === arr.length - 1 ? acc + part[0].toUpperCase() : acc), '')
+      .slice(0, 2) || '?';
+
+  return (
+    <div className={`border-b border-[#e8e0d0] last:border-0 ${selected ? 'bg-[#f9fbf6]' : 'bg-white'}`}>
+      <div className="flex items-start gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={selected ? `Unassign ${w.name}` : `Assign ${w.name}`}
+          className={`mt-1 w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+            selected ? 'bg-[#1a4a1a] border-[#1a4a1a]' : 'border-gray-300 bg-white hover:border-[#1a4a1a]'
+          }`}
+        >
+          {selected ? <Check className="w-4 h-4 text-white" /> : null}
+        </button>
+
+        <div className="w-8 h-8 rounded-full bg-[#eaf3de] text-[#27500A] text-xs font-medium flex items-center justify-center shrink-0">
+          {initialsText}
+        </div>
+
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-gray-800">{w.name}</span>
+            {w.recommended ? (
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold bg-[#1a4a1a] text-white px-2 py-0.5 rounded-full">
+                <Sparkles className="w-3 h-3" />
+                Recommended
+              </span>
+            ) : null}
+            <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+              {ratingCount ? (
+                <>
+                  <Star className="w-3.5 h-3.5 fill-[#F8AC3B] text-[#F8AC3B]" />
+                  {ratingValue} <span className="text-gray-400">({ratingCount})</span>
+                </>
+              ) : (
+                <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">No ratings yet</span>
+              )}
+            </span>
+            <span
+              className={`text-xs ml-auto shrink-0 ${(w.weeklyHours || 0) > 35 ? 'text-amber-600 font-medium' : 'text-gray-400'}`}
+            >
+              {(w.weeklyHours || 0) > 35 ? '⚠ ' : ''}
+              {w.weeklyHours || 0}h/wk
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="h-2 flex-1 bg-gray-100 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+            </div>
+            <span className="text-sm font-semibold text-gray-800 w-14 text-right">{score}/100</span>
+          </div>
+
+          <div className="flex flex-wrap gap-1">
+            {(w.reasons || []).slice(0, expanded ? undefined : 4).map((r) => (
+              <span
+                key={r}
+                className={`text-xs px-2 py-0.5 rounded-full font-normal ${
+                  r.startsWith('⚠') || r.startsWith('Only') ? 'bg-[#faeeda] text-[#633806]' : 'bg-[#eaf3de] text-[#27500A]'
+                }`}
+              >
+                {r}
+              </span>
+            ))}
+          </div>
+
+          {expanded && w.breakdown ? (
+            <div className="mt-2 space-y-1.5 bg-white border border-[#e8e0d0] rounded-lg p-3">
+              {Object.entries(w.breakdown).map(([key, b]) => (
+                <div key={key} className="grid grid-cols-[110px_1fr_48px] sm:grid-cols-[150px_1fr_52px] items-center gap-2 text-xs">
+                  <span className="text-gray-600">{BREAKDOWN_LABELS[key] || key}</span>
+                  <div className="min-w-0">
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-[#2d6b2d] rounded-full" style={{ width: `${(b.score / b.max) * 100}%` }} />
+                    </div>
+                    <span className="text-[11px] text-gray-400">{b.detail}</span>
+                  </div>
+                  <span className="text-gray-700 text-right font-medium">
+                    {b.score}/{b.max}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onExpand}
+            className="text-xs text-[#1a4a1a] hover:underline inline-flex items-center gap-1"
+          >
+            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {expanded ? 'Hide score breakdown' : 'Why this score?'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StepCircle({ step, currentStep }) {
   const done = currentStep > step;

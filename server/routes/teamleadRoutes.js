@@ -11,6 +11,8 @@ router.get('/tasks', ...guard, teamleadController.getTasks);
 router.post('/tasks', ...guard, teamleadController.createTask);
 router.get('/tasks/:taskId', ...guard, teamleadController.getTaskById);
 router.patch('/tasks/:taskId/status', ...guard, teamleadController.updateTaskStatus);
+router.get('/tasks/:taskId/ratings', ...guard, teamleadController.getTaskRatings);
+router.post('/tasks/:taskId/ratings', ...guard, teamleadController.saveTaskRatings);
 router.get('/available-workers', ...guard, teamleadController.getAvailableWorkers);
 router.get('/location-search', ...guard, teamleadController.searchLocation);
 router.get('/leave-requests', ...guard, teamleadController.getLeaveRequests);

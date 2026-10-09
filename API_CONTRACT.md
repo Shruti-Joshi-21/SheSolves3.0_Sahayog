@@ -35,3 +35,26 @@ Success: `{ success: true, message, data }` · Error: `{ success: false, message
 | AttendanceRecord | `deviceId` | `String`, default `''` | Device fingerprint, to detect shared-device proxy check-ins |
 | AttendanceRecord | `userAgent` | `String`, default `''` | Browser/device info for the same check |
 | FieldReport | `aiReport` | `Mixed`, default `null` | Stored Gemini analysis of the report (summary, tags, `source`) |
+
+## Ch1 — Smart assignment + worker ratings (Claude Code #1)
+| Method | Path | Roles | Request | `data` returned | Status |
+|---|---|---|---|---|---|
+| GET | `/api/teamlead/available-workers` (extended) | TEAM_LEAD | query: `date, startTime, endTime` (required) + optional `workType, requiredSkills` (comma list), `latitude, longitude` | Array sorted by `matchScore` desc — see shape below | live |
+| GET | `/api/teamlead/tasks/:taskId/ratings` | TEAM_LEAD (task owner) | — | `{ task: { _id, title, workType, status }, canRate, workers: [{ workerId, name, stars \| null, comment, ratedAt }] }` | live |
+| POST | `/api/teamlead/tasks/:taskId/ratings` | TEAM_LEAD (task owner) | `{ ratings: [{ workerId, stars: 1-5, comment? (≤300) }] }` — upsert; task must be COMPLETED; workers must be assigned | same as GET | live |
+
+`POST /api/teamlead/tasks` also accepts `requiredSkills: string[]` (defaults to `WORK_TYPE_SKILLS[workType]`).
+
+Available-worker shape (old fields kept, new ones added):
+```js
+{ _id, name, initials, workHistory: [workType], weeklyHours, skills, experienceYears, languages,
+  matchScore: 0-100, recommended: true /* only the top one */, matchedSkills: [],
+  reasons: ["Has 'beach cleanup' skill", "Rated 5★ across 2 similar drives", "100% verified attendance", ...],
+  ratingSummary: { avgForWorkType, countForWorkType, avgOverall, countOverall },
+  breakdown: { skills, rating, experience, reliability, workload, proximity } // each { score, max, detail }
+}
+```
+Weights: skills 30 · rating 20 (Bayesian, prior 3.5★ × 3; falls back to overall at half weight; unrated = neutral) · experience 15 · reliability 15 · workload 10 · proximity 10. Logic: `server/services/workerMatch.service.js`.
+
+New model `WorkerRating`: `taskId, workerId, ratedBy, stars (1-5), comment (≤300), workType, timestamps` — unique `(taskId, workerId)`.
+Seed adds 4 workers (priya@, arjun@, sneha@, imran@sevasetu.gov.in / password123) and 7 past COMPLETED drives with attendance + ratings.
