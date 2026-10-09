@@ -170,10 +170,10 @@ export default function TaskDetail() {
                   {workers.map((w) => (
                     <div
                       key={w._id}
-                      className="inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-[#e8e0d0] bg-transparent/80"
+                      className="inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-[#E0E7DC] bg-[#F1F8E9]"
                     >
                       <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1a4a1a] text-[10px] font-semibold text-white"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#246427] text-[10px] font-semibold text-white"
                         title={w.fullName || w.username}
                       >
                         {initials(w.fullName || w.username || '')}
