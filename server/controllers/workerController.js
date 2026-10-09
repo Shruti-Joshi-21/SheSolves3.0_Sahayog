@@ -347,12 +347,16 @@ async function verifyFaceWithPythonService(faceImageUrl, userId) {
       maxContentLength: Infinity,
     });
     const match = resp.data?.match === true || resp.data?.match === 'true';
+    // distance is only meaningful for a real comparison (mock/error responses send 0.0 with a reason)
+    const rawDistance = Number(resp.data?.distance);
+    const compared = !resp.data?.mock && !resp.data?.reason && Number.isFinite(rawDistance);
+    const distance = compared ? rawDistance : null;
     if (!match) {
-      return { faceValid: false, reason: 'Face did not match registered photo' };
+      return { faceValid: false, reason: 'Face did not match registered photo', distance, available: compared };
     }
-    return { faceValid: true, reason: '' };
+    return { faceValid: true, reason: '', distance, available: compared };
   } catch (err) {
-    return { faceValid: false, reason: 'Face verification service unavailable' };
+    return { faceValid: false, reason: 'Face verification service unavailable', distance: null, available: false };
   }
 }
 
