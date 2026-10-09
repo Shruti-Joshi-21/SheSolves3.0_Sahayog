@@ -1,6 +1,3 @@
-// Slow venue DNS (~11s/lookup) was timing out Cloudinary uploads — see utils/fastDns.js.
-// TODO: move this require to the top of index.js (shared file) so it covers every route.
-require('../utils/fastDns');
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();

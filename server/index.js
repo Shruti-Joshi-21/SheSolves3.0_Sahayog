@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./utils/fastDns'); // public DNS for outbound calls — slow venue DNS was timing out uploads
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
