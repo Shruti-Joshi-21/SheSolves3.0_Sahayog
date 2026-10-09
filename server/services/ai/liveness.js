@@ -7,7 +7,8 @@
  */
 const { generateJSON, Type } = require('../ai.service');
 
-const LIVENESS_TIMEOUT_MS = 15000;
+// Gemini vision on 2 frames takes ~10–20s under load; runs in parallel with face verification
+const LIVENESS_TIMEOUT_MS = 30000;
 const MIN_CONFIDENCE = 0.4; // below this the verdict is treated as inconclusive
 
 const SYSTEM = `You are an anti-spoofing checker for an NGO attendance app.
@@ -28,13 +29,6 @@ const SCHEMA = {
   },
   required: ['samePerson', 'actionPerformed', 'spoofSuspected', 'confidence', 'reason'],
 };
-
-// Ask Cloudinary for a small copy — full phone photos make the vision call slow
-function smallCloudinaryUrl(url) {
-  return /res\.cloudinary\.com\/.+\/image\/upload\//.test(url)
-    ? url.replace('/image/upload/', '/image/upload/w_480,q_auto/')
-    : url;
-}
 
 const neutral = (reason, source = 'fallback') => ({
   livenessPassed: null,
@@ -57,7 +51,7 @@ async function checkLiveness({ frame1Url, frame2Url, action }) {
 Requested action: "${requested}".
 Answer: are both frames the same real person, was the requested action visibly performed between the frames,
 and is there any sign this is a photo of a screen/print rather than a live person?`,
-    imageUrls: [frame1Url, frame2Url].map(smallCloudinaryUrl),
+    imageUrls: [frame1Url, frame2Url], // webcam frames are already small (~30 KB)
     schema: SCHEMA,
     fallback: {},
     timeoutMs: LIVENESS_TIMEOUT_MS,
@@ -79,7 +73,7 @@ and is there any sign this is a photo of a screen/print rather than a live perso
     else if (!result.samePerson) reason = 'Frames show different people';
     else reason = `Action "${requested}" not visible`;
   }
-  return { livenessPassed, confidence, reason, source: 'ai' };
+  return { livenessPassed, spoofSuspected: !!result.spoofSuspected, confidence, reason, source: 'ai' };
 }
 
 module.exports = { checkLiveness };

@@ -15,6 +15,7 @@ const WEIGHTS = { face: 30, liveness: 20, geofence: 20, timing: 10, device: 10, 
 const BANDS = { TRUSTED: 80, REVIEW: 50 };
 const IMPOSSIBLE_SPEED_KMH = 80;
 const REASON_BELOW_RATIO = 0.5; // a signal below half its weight becomes a "reason"
+const CRITICAL_CAP = 40; // failed liveness / face mismatch → always SUSPICIOUS
 
 const clamp01 = (n) => Math.max(0, Math.min(1, n));
 const lerp = (from, to, t) => from + (to - from) * clamp01(t);
@@ -127,8 +128,28 @@ function computeConfidence(input = {}) {
     total += points;
     if (ratio < REASON_BELOW_RATIO) reasons.push(detail);
   }
-  const score = Math.round(total);
-  return { score, band: bandFor(score), signals, reasons };
+  let score = Math.round(total);
+
+  // Critical signals override the weighted sum — a spoof can't be "averaged away" by good GPS/timing
+  const live = input.liveness || {};
+  const face = input.face || {};
+  const faceMismatch = face.available && face.matched === false; // service down ≠ mismatch
+  if (live.passed === false || faceMismatch) {
+    score = Math.min(score, CRITICAL_CAP);
+    reasons.unshift(
+      live.spoofSuspected
+        ? 'Possible spoof: photo or screen shown to the camera'
+        : live.passed === false
+          ? 'Liveness check failed'
+          : 'Face did not match the registered worker'
+    );
+  } else if (live.passed !== true && score >= BANDS.TRUSTED) {
+    // Not TRUSTED unless liveness actually passed (AI unavailable / no frames → REVIEW at best)
+    score = BANDS.TRUSTED - 1;
+    reasons.push('Liveness not verified — needs review before it can be trusted');
+  }
+
+  return { score, band: bandFor(score), signals, reasons: [...new Set(reasons)] };
 }
 
 function mostCommon(values) {

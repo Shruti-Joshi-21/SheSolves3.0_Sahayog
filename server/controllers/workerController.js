@@ -382,13 +382,14 @@ function readTrustFields(req) {
  * Builds the attendance trust score for one phase (check-in or check-out).
  * prevPoint overrides the "last known location" (check-out compares against its own check-in).
  */
-async function scoreAttendancePhase({ workerId, excludeRecordId, prevPoint, faceResult, faceUrl, trustFields, geofence, timing, current }) {
+async function scoreAttendancePhase({ livenessPromise, workerId, excludeRecordId, prevPoint, faceResult, faceUrl, trustFields, geofence, timing, current }) {
   const [ctx, livenessResult] = await Promise.all([
     gatherTrustContext({ workerId, deviceId: trustFields.deviceId, excludeRecordId }),
-    checkLiveness({ frame1Url: faceUrl, frame2Url: trustFields.livenessFrameUrl, action: trustFields.livenessAction }),
+    livenessPromise,
   ]);
   const liveness = {
     passed: livenessResult.livenessPassed,
+    spoofSuspected: !!livenessResult.spoofSuspected,
     confidence: livenessResult.confidence,
     reason: livenessResult.reason,
     action: trustFields.livenessAction,
@@ -485,6 +486,13 @@ async function checkIn(req, res, next) {
     }
 
     // faceFile.path is the Cloudinary https:// URL after upload
+    // Liveness (Gemini) runs alongside face verification so check-in/out is not twice as slow
+    const trustFields = readTrustFields(req);
+    const livenessPromise = checkLiveness({
+      frame1Url: faceFile.path,
+      frame2Url: trustFields.livenessFrameUrl,
+      action: trustFields.livenessAction,
+    });
     const faceResult = await verifyFaceWithPythonService(faceFile.path, workerId);
     const faceValid = faceResult.faceValid;
     const faceReason = faceResult.reason;
@@ -494,8 +502,8 @@ async function checkIn(req, res, next) {
     if (!locationValid) baseFlags.push(locationReason);
     if (!faceValid) baseFlags.push(faceReason);
 
-    const trustFields = readTrustFields(req);
     const { trust, liveness } = await scoreAttendancePhase({
+      livenessPromise,
       workerId: oid,
       faceResult,
       faceUrl: faceFile.path,
@@ -642,6 +650,13 @@ async function checkOut(req, res, next) {
     }
 
     // faceFile.path is the Cloudinary https:// URL after upload
+    // Liveness (Gemini) runs alongside face verification so check-in/out is not twice as slow
+    const trustFields = readTrustFields(req);
+    const livenessPromise = checkLiveness({
+      frame1Url: faceFile.path,
+      frame2Url: trustFields.livenessFrameUrl,
+      action: trustFields.livenessAction,
+    });
     const faceResult = await verifyFaceWithPythonService(faceFile.path, workerId);
     const faceValid = faceResult.faceValid;
     const faceReason = faceResult.reason;
@@ -656,8 +671,8 @@ async function checkOut(req, res, next) {
     if (!faceValid) newFlagReasons.push(faceReason);
     if (isEarly) newFlagReasons.push(`Early checkout (${earlyMins}m early)`);
 
-    const trustFields = readTrustFields(req);
     const { trust, liveness } = await scoreAttendancePhase({
+      livenessPromise,
       workerId: oid,
       excludeRecordId: record._id,
       prevPoint: record.checkInLocation?.latitude != null

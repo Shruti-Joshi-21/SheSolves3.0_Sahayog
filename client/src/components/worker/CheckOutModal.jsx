@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import Webcam from 'react-webcam';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import {
   MapPin,
-  Camera,
   ImagePlus,
   X,
   AlertTriangle,
@@ -14,8 +12,12 @@ import {
 } from 'lucide-react';
 import api from "../../utils/api";
 import StepIndicator from './StepIndicator';
+import LivenessCapture from './LivenessCapture';
+import { TrustBadge } from '../shared/TrustScore';
+import { appendDeviceInfo } from '../../utils/deviceId';
+import { compressImage } from '../../utils/compressImage';
 
-const STEPS = ['GPS Location', 'Face Capture', 'After Photo', 'Confirm'];
+const STEPS = ['GPS Location', 'Face + Liveness', 'After Photo', 'Confirm'];
 
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
   const R = 6371e3;
@@ -30,12 +32,6 @@ function getDistanceMeters(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-async function dataUrlToFile(dataUrl, filename) {
-  const res = await fetch(dataUrl);
-  const blob = await res.blob();
-  return new File([blob], filename, { type: 'image/jpeg' });
-}
-
 export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord, onSuccess }) {
   const [step, setStep] = useState(0);
   const [gpsLoading, setGpsLoading] = useState(true);
@@ -44,11 +40,9 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
   const [distanceM, setDistanceM] = useState(null);
   const [inRange, setInRange] = useState(true);
 
-  const webcamRef = useRef(null);
   const fieldInputRef = useRef(null);
-  const [camDenied, setCamDenied] = useState(false);
-  const [facePreview, setFacePreview] = useState(null);
-  const [faceImageFile, setFaceImageFile] = useState(null);
+  const [liveness, setLiveness] = useState(null); // { frame1File, frame2File, previews, action }
+  const faceImageFile = liveness?.frame1File || null;
 
   const [fieldImageFile, setFieldImageFile] = useState(null);
   const [fieldPreviewUrl, setFieldPreviewUrl] = useState(null);
@@ -84,9 +78,7 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
       setGpsData(null);
       setDistanceM(null);
       setInRange(true);
-      setCamDenied(false);
-      setFacePreview(null);
-      setFaceImageFile(null);
+      setLiveness(null);
       setFieldImageFile(null);
       setFieldPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
@@ -124,23 +116,16 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
     }
   }, [isOpen, step, task, captureGps]);
 
-  const handleCaptureFace = async () => {
-    const shot = webcamRef.current?.getScreenshot();
-    if (!shot) return;
-    setFacePreview(shot);
-    const file = await dataUrlToFile(shot, 'face.jpg');
-    setFaceImageFile(file);
-  };
-
-  const handleFieldFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFieldFile = async (e) => {
+    const picked = e.target.files?.[0];
+    e.target.value = '';
+    if (!picked) return;
+    const file = await compressImage(picked);
     setFieldPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
     setFieldImageFile(file);
-    e.target.value = '';
   };
 
   const performCheckOut = async () => {
@@ -153,6 +138,9 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
       formData.append('longitude', String(gpsData.longitude));
       formData.append('faceImage', faceImageFile);
       formData.append('fieldImage', fieldImageFile);
+      if (liveness?.frame2File) formData.append('livenessFrame', liveness.frame2File);
+      if (liveness?.action) formData.append('livenessAction', liveness.action);
+      appendDeviceInfo(formData);
       if (earlyReason) {
         formData.append('earlyCheckoutReason', earlyReason);
       }
@@ -276,6 +264,9 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                           <AlertTriangle className="h-12 w-12 text-amber-600" />
                         </motion.div>
                         <h3 className="text-xl font-bold text-amber-700">Checked Out with Flags</h3>
+                        {result.confidence && (
+                          <div className="flex justify-center"><TrustBadge score={result.confidence.score} band={result.confidence.band} /></div>
+                        )}
                         <ul className="space-y-2 text-left">
                           {(result.flagReasons || []).map((r, i) => (
                             <li key={`${i}-${r}`} className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800">
@@ -295,6 +286,9 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                           <CheckCircle2 className="h-12 w-12 text-white" />
                         </motion.div>
                         <h3 className="text-xl font-bold text-[#005F02]">Attendance Verified!</h3>
+                        {result.confidence && (
+                          <div className="flex justify-center"><TrustBadge score={result.confidence.score} band={result.confidence.band} /></div>
+                        )}
                         <div className="space-y-1 text-sm text-gray-600">
                           <p>
                             In:{' '}
@@ -414,62 +408,8 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                       {step === 1 && (
                         <div className="space-y-4">
                           <h3 className="text-[0.9375rem] font-semibold text-[#212121]">Verify Your Identity</h3>
-                          <p className="text-[0.875rem] text-[#616161]">Look at the camera and click capture</p>
-                          {camDenied ? (
-                            <div className="flex flex-col items-center py-8 text-center bg-[#FFEBEE] rounded-[10px] p-4 border border-[#FFCDD2]">
-                              <Camera className="mb-2 h-12 w-12 text-[#C62828]" />
-                              <p className="text-sm text-[#C62828]">
-                                Camera access denied. Please allow camera permissions.
-                              </p>
-                            </div>
-                          ) : !facePreview ? (
-                            <>
-                              <Webcam
-                                audio={false}
-                                ref={webcamRef}
-                                screenshotFormat="image/jpeg"
-                                mirrored
-                                videoConstraints={{ facingMode: 'user', width: 1280, height: 720 }}
-                                onUserMediaError={() => setCamDenied(true)}
-                                className="aspect-[4/3] w-full rounded-[14px] bg-black object-cover"
-                              />
-                              <button
-                                type="button"
-                                className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                                onClick={handleCaptureFace}
-                              >
-                                <Camera className="h-5 w-5" />
-                                Capture
-                              </button>
-                            </>
-                          ) : (
-                            <div className="space-y-3">
-                              <img
-                                src={facePreview}
-                                alt="Face capture"
-                                className="aspect-[4/3] w-full rounded-[14px] border border-[#E0E7DC] object-cover"
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  className="flex-1 rounded-[10px] border-[1.5px] border-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#246427] bg-transparent hover:bg-[#F1F8E9] transition-colors"
-                                  onClick={() => {
-                                    setFacePreview(null);
-                                    setFaceImageFile(null);
-                                  }}
-                                >
-                                  Retake
-                                </button>
-                                <button
-                                  type="button"
-                                  className="flex-1 rounded-[10px] bg-[#246427] py-[10px] text-[0.875rem] font-semibold text-[#FFFFFF] hover:bg-[#1a4d1c] transition-colors"
-                                  onClick={() => setStep(2)}
-                                >
-                                  Next
-                                </button>
-                              </div>
-                            </div>
-                          )}
+                          <p className="text-[0.875rem] text-[#616161]">Do the action shown to prove you're there in person</p>
+                          <LivenessCapture value={liveness} onChange={setLiveness} onNext={() => setStep(2)} />
                         </div>
                       )}
 
@@ -582,7 +522,7 @@ export default function CheckOutModal({ isOpen, onClose, task, attendanceRecord,
                             </div>
                             <div className="flex justify-between gap-2 items-center">
                               <span className="text-[#616161]">Face</span>
-                              <span className="text-[#246427] font-semibold">Captured ✓</span>
+                              <span className="text-[#246427] font-semibold">Captured ✓{liveness?.action ? ` · ${liveness.action}` : ''}</span>
                             </div>
                             <div className="flex justify-between gap-2 items-center">
                               <span className="text-[#616161]">Field Photo</span>

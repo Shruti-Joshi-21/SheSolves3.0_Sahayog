@@ -4,6 +4,10 @@ import { CheckCircle2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../../utils/api.js';
 import { useAuth } from '../../context/AuthContext';
+import { TrustBadge, TrustScoreCard } from '../../components/shared/TrustScore';
+
+const LOW_TRUST_FILTER = 'Low trust score';
+const BAND_BORDER = { TRUSTED: 'border-l-[#81C784]', REVIEW: 'border-l-[#F8AC3B]', SUSPICIOUS: 'border-l-red-400' };
 
 const FlaggedRecords = () => {
   useAuth();
@@ -15,9 +19,13 @@ const FlaggedRecords = () => {
   const [isResolving, setIsResolving] = useState(false);
 
   const fetchRecords = async () => {
-    const response = await api.get('/teamlead/attendance/flagged');
-    const { data } = response.data;
-    setRecords(data || []);
+    try {
+      const response = await api.get('/teamlead/attendance/flagged');
+      const { data } = response.data;
+      setRecords(data || []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not load flagged records', { toastId: 'flagged-load' });
+    }
   };
   useEffect(() => {
     fetchRecords();
@@ -28,8 +36,13 @@ const FlaggedRecords = () => {
   }, []);
 
   const filtered = useMemo(() => {
-    if (activeFilter === 'ALL') return records;
-    return records.filter((r) => (r.flagReasons || []).join(' ').toLowerCase().includes(activeFilter.toLowerCase()));
+    // Lowest trust score first; records scored before Challenge 3 go last
+    const byTrust = [...records].sort((a, b) => (a.confidenceScore ?? 101) - (b.confidenceScore ?? 101));
+    if (activeFilter === 'ALL') return byTrust;
+    if (activeFilter === LOW_TRUST_FILTER) {
+      return byTrust.filter((r) => r.confidenceBand && r.confidenceBand !== 'TRUSTED');
+    }
+    return byTrust.filter((r) => (r.flagReasons || []).join(' ').toLowerCase().includes(activeFilter.toLowerCase()));
   }, [records, activeFilter]);
 
   const resolve = async (action) => {
@@ -53,7 +66,7 @@ const FlaggedRecords = () => {
     <>
       <div className="bg-transparent p-6">
         <div className="flex gap-2 mb-5 flex-wrap">
-          {['ALL', 'Location mismatch', 'Face mismatch', 'Incomplete checkout'].map((f) => (
+          {['ALL', LOW_TRUST_FILTER, 'Location mismatch', 'Face mismatch', 'Incomplete checkout'].map((f) => (
             <button
               key={f}
               type="button"
@@ -77,13 +90,14 @@ const FlaggedRecords = () => {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: index * 0.04 }}
-              className="bg-white rounded-xl border border-[#e8e0d0] border-l-4 border-l-red-400 p-5 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className={`bg-white rounded-xl border border-[#e8e0d0] border-l-4 ${BAND_BORDER[record.confidenceBand] || 'border-l-red-400'} p-5 mb-3 flex flex-col md:flex-row md:items-center justify-between gap-4`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-x-3 text-sm text-gray-800 font-semibold">
                   <span>{record.worker?.fullName}</span>
                   <span className="text-gray-300 font-normal">·</span>
                   <span className="text-gray-600 font-medium">{record.task?.title}</span>
+                  <TrustBadge score={record.confidenceScore} band={record.confidenceBand} />
                 </div>
                 
                 <p className="text-xs text-gray-400 font-normal mt-1 flex items-center gap-2">
@@ -157,6 +171,8 @@ const FlaggedRecords = () => {
                     {(selectedRecord.flagReasons || []).join(', ') || 'Flagged activity detected'}
                   </p>
                 </div>
+
+                <TrustScoreCard record={selectedRecord} />
 
                 <div className="space-y-1.5">
                   <label className="text-[0.875rem] font-medium text-[#616161]">Action Remark</label>

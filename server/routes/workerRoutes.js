@@ -1,3 +1,6 @@
+// Slow venue DNS (~11s/lookup) was timing out Cloudinary uploads — see utils/fastDns.js.
+// TODO: move this require to the top of index.js (shared file) so it covers every route.
+require('../utils/fastDns');
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
@@ -5,6 +8,7 @@ const workerController = require('../controllers/workerController');
 const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 const { ROLES } = require('../utils/constants');
 const { attendanceStorage, reportStorage } = require('../config/cloudinary');
+const { sendError } = require('../utils/response');
 
 function badRequest(msg) {
   const e = new Error(msg);
@@ -21,7 +25,7 @@ const attendanceImageMimes = [
 ];
 
 // Both faceImage and fieldImage go to sevasetu/attendance on Cloudinary
-const attendanceUpload = multer({
+const attendanceMulter = multer({
   storage: attendanceStorage,
   limits: { fileSize: 12 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
@@ -33,6 +37,26 @@ const attendanceUpload = multer({
   { name: 'fieldImage', maxCount: 1 },
   { name: 'livenessFrame', maxCount: 1 }, // optional 2nd face frame for the liveness check
 ]);
+
+// Cloudinary upload errors are plain objects ({ name: 'TimeoutError', http_code: 499 }) that the
+// global handler turns into a vague 500 — answer with something the worker can act on instead.
+function attendanceUpload(req, res, next) {
+  attendanceMulter(req, res, (err) => {
+    if (!err) return next();
+    if (err.http_code || err.name === 'TimeoutError') {
+      console.error('[attendance upload] Cloudinary error:', err.name, err.http_code, err.message);
+      const timedOut = err.name === 'TimeoutError' || err.http_code === 499;
+      return sendError(
+        res,
+        timedOut
+          ? 'Photo upload timed out — slow network. Please try again.'
+          : 'Photo upload failed. Please try again.',
+        timedOut ? 504 : 502
+      );
+    }
+    return next(err);
+  });
+}
 
 const reportUpload = multer({
   storage: reportStorage,

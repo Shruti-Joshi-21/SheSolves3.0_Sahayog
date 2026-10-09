@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Calendar, Clock, Wrench, AlertTriangle } from 'lucide-react';
+import { TrustScoreCard } from '../shared/TrustScore';
 
 function uploadsBaseUrl() {
   const raw = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -109,6 +110,8 @@ export default function AttendanceDetailDrawer({ isOpen, onClose, record, loadin
                     {record.status}
                   </span>
                 </div>
+
+                <TrustScoreCard record={record} className="mx-4 mt-4" />
 
                 <div className="mx-4 mt-4 rounded-[10px] bg-[#F1F8E9] p-4">
                   <p className="text-[0.75rem] font-medium uppercase tracking-wide text-[#616161]">Task</p>
