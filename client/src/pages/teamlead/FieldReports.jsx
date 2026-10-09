@@ -4,6 +4,7 @@ import { FileText, CheckCircle2, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../../utils/api.js';
 import { useAuth } from '../../context/AuthContext';
+import AiReportPanel from '../../components/reports/AiReportPanel.jsx';
 
 function uploadsBaseUrl() {
   const raw = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -176,7 +177,7 @@ const FieldReports = () => {
             <motion.div
               role="dialog"
               aria-modal="true"
-              className="relative mt-8 w-full max-w-lg rounded-[20px] bg-[#FFFFFF] shadow-[0_8px_32px_rgba(0,0,0,0.14)] overflow-hidden"
+              className="relative mt-8 w-full max-w-xl rounded-[20px] bg-[#FFFFFF] shadow-[0_8px_32px_rgba(0,0,0,0.14)] overflow-hidden"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -248,6 +249,10 @@ const FieldReports = () => {
                         </div>
                       </div>
                     )}
+
+                    <div className="border-t border-[#E0E7DC] pt-5">
+                      <AiReportPanel fieldReport={selectedReport} />
+                    </div>
 
                     <div className="border-t border-[#E0E7DC] my-6" />
 
