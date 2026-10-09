@@ -32,6 +32,7 @@ const FieldReportSchema = new mongoose.Schema(
     forwardedAt: { type: Date, default: null },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reviewNote: { type: String, default: '' },
+    aiReport: { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { timestamps: true }
 );

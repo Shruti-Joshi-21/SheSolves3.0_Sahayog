@@ -12,6 +12,7 @@ const TaskSchema = new mongoose.Schema(
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
     workType: { type: String, required: true, trim: true },
+    requiredSkills: { type: [String], default: [] },
     checkInBuffer: { type: Number, default: 15 },
     checkOutBuffer: { type: Number, default: 15 },
     reportFields: {

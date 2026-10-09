@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema(
     faceImagePath: { type: String, default: null },
     faceEncoding: { type: Buffer, default: null },
     assignedTeamLead: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    skills: { type: [String], default: [] },
+    experienceYears: { type: Number, default: 0 },
+    languages: { type: [String], default: ['English'] },
   },
   { timestamps: true }
 );
