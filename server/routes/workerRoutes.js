@@ -31,6 +31,7 @@ const attendanceUpload = multer({
 }).fields([
   { name: 'faceImage', maxCount: 1 },
   { name: 'fieldImage', maxCount: 1 },
+  { name: 'livenessFrame', maxCount: 1 }, // optional 2nd face frame for the liveness check
 ]);
 
 const reportUpload = multer({
