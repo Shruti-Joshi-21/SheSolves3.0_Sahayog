@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import GoogleTranslate from './components/GoogleTranslate';
 
 // Shared pages
 import LandingPage from './pages/LandingPage';
@@ -57,6 +58,7 @@ const teamLeadNested = (
 function App() {
   return (
     <AuthProvider>
+      <GoogleTranslate />
       <Router>
         <Routes>
           <Route path="/login" element={<Navigate to="/" replace />} />
