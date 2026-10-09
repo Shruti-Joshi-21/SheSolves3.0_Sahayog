@@ -28,6 +28,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/locations', require('./routes/location.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/ai', require('./routes/ai.routes'));
+app.use('/api/public', require('./routes/public.routes'));
 
 app.use(errorHandler);
 

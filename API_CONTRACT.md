@@ -58,3 +58,29 @@ Weights: skills 30 · rating 20 (Bayesian, prior 3.5★ × 3; falls back to over
 
 New model `WorkerRating`: `taskId, workerId, ratedBy, stars (1-5), comment (≤300), workType, timestamps` — unique `(taskId, workerId)`.
 Seed adds 4 workers (priya@, arjun@, sneha@, imran@sevasetu.gov.in / password123) and 7 past COMPLETED drives with attendance + ratings.
+
+## Ch2 — Impact dashboard API (Claude Code #1)
+| Method | Path | Roles | Request | `data` returned | Status |
+|---|---|---|---|---|---|
+| GET | `/api/admin/impact` | ADMIN | optional `?story=false` to skip the AI story | Impact shape below | live |
+| GET | `/api/public/impact` | **public, no auth** (donor page) | optional `?story=false` | Same shape — contains no worker names | live |
+
+```js
+{
+  generatedAt,
+  period: { current: { start, end, label: 'Last 30 days' }, previous: { start, end, label: 'Previous 30 days' } },
+  kpis: {                       // each: { value /* last 30 days */, previous /* 30 days before */, deltaPct, total /* all time */ }
+    wasteCollectedKg, drivesCompleted, volunteerHours, locationsCovered, workersActive, photoEvidence
+  },
+  byWorkType: [{ workType, drives, volunteerHours, wasteCollectedKg }],      // all time, most drives first
+  trend: [{ month: '2026-10', label: 'Oct 2026', drivesCompleted, volunteerHours, wasteCollectedKg }], // last 6 months, oldest first
+  locations: [{ locationName, latitude, longitude, drives, workTypes: [], lastDriveAt }],               // map pins
+  gallery: [{ attendanceId, taskTitle, workType, locationName, date, beforeImage, afterImage }],       // ≤12, verified attendance with both photos
+  impactStory: { text, highlights: [], source: 'ai' | 'fallback' }                                     // omitted when ?story=false
+}
+```
+- `deltaPct` is a percentage (`-12.5`, `100`); it's `0` when both periods are 0.
+- Waste comes from field-report fields whose name contains waste/weight + `(kg)` (e.g. "Waste collected (kg)", "Total weight (kg)").
+- Volunteer hours = check-in → check-out time of VERIFIED attendance.
+- `impactStory` comes from Gemini (cached 30 min); if Gemini is down it is a templated sentence (`source: 'fallback'`), so the card is never empty.
+- Logic: `server/services/impact.service.js`. The older `/api/admin/impact-metrics` is unchanged.

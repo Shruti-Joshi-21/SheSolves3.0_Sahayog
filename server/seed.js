@@ -7,6 +7,7 @@ const Task = require('./models/Task');
 const TaskAssignment = require('./models/TaskAssignment');
 const AttendanceRecord = require('./models/AttendanceRecord');
 const WorkerRating = require('./models/WorkerRating');
+const FieldReport = require('./models/FieldReport');
 
 const SKILL_POOL = [
   'waste segregation',
@@ -231,13 +232,17 @@ const seed = async () => {
       return d;
     };
     const history = [
-      { title: 'Versova Shoreline Cleanup', workType: 'Shoreline Cleanup', locationName: 'Versova Beach', latitude: 19.1351, longitude: 72.8146, ago: 30, crew: [[rahul, 5], [arjun, 4], [imran, 4]] },
-      { title: 'Dadar Chowpatty Cleanup', workType: 'Shoreline Cleanup', locationName: 'Dadar Chowpatty', latitude: 19.0176, longitude: 72.8383, ago: 23, crew: [[rahul, 5], [arjun, 3]] },
-      { title: 'Aarey Tree Plantation', workType: 'Tree Plantation', locationName: 'Aarey Colony', latitude: 19.155, longitude: 72.8722, ago: 20, crew: [[priya, 5], [imran, 4]] },
-      { title: 'Andheri Waste Segregation Drive', workType: 'Waste Collection', locationName: 'Andheri West', latitude: 19.1364, longitude: 72.8296, ago: 16, crew: [[rahul, 4], [imran, 5], [arjun, 4]] },
-      { title: 'Powai Lake Water Survey', workType: 'Survey Drive', locationName: 'Powai Lake', latitude: 19.1273, longitude: 72.905, ago: 13, crew: [[anjali, 5], [sneha, 5]] },
-      { title: 'Bandra Awareness Campaign', workType: 'Awareness Campaign', locationName: 'Bandra Bandstand', latitude: 19.0544, longitude: 72.8203, ago: 10, crew: [[anjali, 4], [priya, 5]] },
-      { title: 'Goregaon Recycling Drive', workType: 'Recycling Drive', locationName: 'Goregaon East', latitude: 19.1663, longitude: 72.8526, ago: 8, crew: [[imran, 5], [priya, 4], [arjun, 2]] },
+      { title: 'Versova Shoreline Cleanup', workType: 'Shoreline Cleanup', locationName: 'Versova Beach', latitude: 19.1351, longitude: 72.8146, ago: 30, kg: 420, crew: [[rahul, 5], [arjun, 4], [imran, 4]] },
+      { title: 'Dadar Chowpatty Cleanup', workType: 'Shoreline Cleanup', locationName: 'Dadar Chowpatty', latitude: 19.0176, longitude: 72.8383, ago: 23, kg: 260, crew: [[rahul, 5], [arjun, 3]] },
+      { title: 'Aarey Tree Plantation', workType: 'Tree Plantation', locationName: 'Aarey Colony', latitude: 19.155, longitude: 72.8722, ago: 20, kg: 0, crew: [[priya, 5], [imran, 4]] },
+      { title: 'Andheri Waste Segregation Drive', workType: 'Waste Collection', locationName: 'Andheri West', latitude: 19.1364, longitude: 72.8296, ago: 16, kg: 510, crew: [[rahul, 4], [imran, 5], [arjun, 4]] },
+      { title: 'Powai Lake Water Survey', workType: 'Survey Drive', locationName: 'Powai Lake', latitude: 19.1273, longitude: 72.905, ago: 13, kg: 0, crew: [[anjali, 5], [sneha, 5]] },
+      { title: 'Bandra Awareness Campaign', workType: 'Awareness Campaign', locationName: 'Bandra Bandstand', latitude: 19.0544, longitude: 72.8203, ago: 10, kg: 0, crew: [[anjali, 4], [priya, 5]] },
+      { title: 'Goregaon Recycling Drive', workType: 'Recycling Drive', locationName: 'Goregaon East', latitude: 19.1663, longitude: 72.8526, ago: 8, kg: 340, crew: [[imran, 5], [priya, 4], [arjun, 2]] },
+      { title: 'Mahim Beach Cleanup', workType: 'Shoreline Cleanup', locationName: 'Mahim Beach', latitude: 19.0390, longitude: 72.8388, ago: 45, kg: 380, crew: [[rahul, 4], [arjun, 4]] },
+      { title: 'Sanjay Gandhi Park Plantation', workType: 'Tree Plantation', locationName: 'Borivali National Park', latitude: 19.2147, longitude: 72.9106, ago: 75, kg: 0, crew: [[priya, 5], [imran, 5]] },
+      { title: 'Kurla Recycling Drive', workType: 'Recycling Drive', locationName: 'Kurla West', latitude: 19.0726, longitude: 72.8845, ago: 110, kg: 290, crew: [[imran, 4], [rahul, 4]] },
+      { title: 'Juhu Beach Cleanup', workType: 'Shoreline Cleanup', locationName: 'Juhu Beach', latitude: 19.0988, longitude: 72.8264, ago: 140, kg: 450, crew: [[rahul, 5], [arjun, 3], [imran, 4]] },
     ];
 
     for (const h of history) {
@@ -294,6 +299,26 @@ const seed = async () => {
           { upsert: true }
         );
       }
+
+      // One field report per drive (Ch2 impact: waste collected, volunteer count)
+      const [reporter] = h.crew[0];
+      await FieldReport.findOneAndUpdate(
+        { task: task._id, worker: reporter._id },
+        {
+          worker: reporter._id,
+          task: task._id,
+          submittedBy: reporter._id,
+          description: `${h.workType} completed at ${h.locationName} with ${h.crew.length} field workers.`,
+          reportFieldResponses: [
+            { fieldName: 'Waste collected (kg)', fieldType: 'Number', value: h.kg },
+            { fieldName: 'Field workers present', fieldType: 'Number', value: h.crew.length },
+          ],
+          status: 'APPROVED',
+          createdAt: daysAgo(h.ago, 14),
+          updatedAt: daysAgo(h.ago, 14),
+        },
+        { upsert: true, timestamps: false }
+      );
     }
 
     console.log(`Skill profiles added to ${workersWithoutSkills.length} other worker(s), requiredSkills to ${taskUpdates.length} task(s)`);
