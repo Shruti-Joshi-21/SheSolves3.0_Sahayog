@@ -1096,7 +1096,49 @@ const getLeaveRecords = async (req, res) => {
   }
 };
 
+// GET /api/admin/attendance/anomalies?band=SUSPICIOUS&limit=50
+// Lowest attendance trust scores first. Team leads only see records on tasks they created.
+const CONFIDENCE_BANDS = ['TRUSTED', 'REVIEW', 'SUSPICIOUS'];
+const getAttendanceAnomalies = async (req, res) => {
+  try {
+    const band = String(req.query.band || '').toUpperCase();
+    if (band && !CONFIDENCE_BANDS.includes(band)) {
+      return sendError(res, `band must be one of ${CONFIDENCE_BANDS.join(', ')}`, 400);
+    }
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 50));
+
+    const scope = { isDeleted: false, confidenceScore: { $ne: null } };
+    if (req.user.role === ROLES.TEAM_LEAD) {
+      const taskIds = await Task.find({ createdBy: req.user.userId, isDeleted: false }).distinct('_id');
+      scope.task = { $in: taskIds };
+    }
+
+    const [records, bandCounts] = await Promise.all([
+      AttendanceRecord.find(band ? { ...scope, confidenceBand: band } : scope)
+        .sort({ confidenceScore: 1, checkInTime: -1 })
+        .limit(limit)
+        .populate('worker', 'fullName username')
+        .populate('task', 'title workType locationName date startTime endTime allowedRadius')
+        .select(
+          'worker task checkInTime checkOutTime status flagReasons beforeImage afterImage confidenceScore confidenceBand confidenceSignals faceDistance livenessPassed livenessAction deviceId userAgent'
+        )
+        .lean(),
+      AttendanceRecord.aggregate([{ $match: scope }, { $group: { _id: '$confidenceBand', count: { $sum: 1 } } }]),
+    ]);
+
+    const counts = { TRUSTED: 0, REVIEW: 0, SUSPICIOUS: 0 };
+    bandCounts.forEach((b) => {
+      if (b._id in counts) counts[b._id] = b.count;
+    });
+
+    return sendSuccess(res, { records, counts }, 'Attendance anomalies fetched');
+  } catch (error) {
+    return sendError(res, error.message || 'Failed to load attendance anomalies', 500);
+  }
+};
+
 module.exports = {
+  getAttendanceAnomalies,
   getTeamLeads,
   getAllUsers,
   toggleUserActive,
