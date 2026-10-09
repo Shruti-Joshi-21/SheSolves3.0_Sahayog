@@ -446,62 +446,88 @@ const getImpactMetrics = async (req, res) => {
     const cur = monthRange(0);
     const prev = monthRange(-1);
 
-    const [wasteCur, wastePrev, drivesCur, drivesPrev, verifiedRecs, totalFieldWorkers] =
-      await Promise.all([
-        FieldReport.aggregate([
-          {
-            $match: {
-              createdAt: { $gte: cur.start, $lte: cur.end },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              kg: { $sum: { $ifNull: ['$wasteCollectedKg', 0] } },
-            },
-          },
-        ]),
-        FieldReport.aggregate([
-          {
-            $match: {
-              createdAt: { $gte: prev.start, $lte: prev.end },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              kg: { $sum: { $ifNull: ['$wasteCollectedKg', 0] } },
-            },
-          },
-        ]),
-        Task.countDocuments({
-          isDeleted: false,
-          status: 'COMPLETED',
-          createdAt: { $gte: cur.start, $lte: cur.end },
-        }),
-        Task.countDocuments({
-          isDeleted: false,
-          status: 'COMPLETED',
-          createdAt: { $gte: prev.start, $lte: prev.end },
-        }),
-        AttendanceRecord.find({
-          isDeleted: false,
-          status: 'VERIFIED',
-          checkInTime: { $exists: true, $ne: null },
-          checkOutTime: { $exists: true, $ne: null },
-          createdAt: { $gte: cur.start, $lte: cur.end },
-        }).lean(),
-        User.countDocuments({
-          role: ROLES.FIELD_WORKER,
-          isActive: true,
-          isDeleted: false,
-        }),
-      ]);
+    // Helper: fuzzy-sum numeric fields related to waste from dynamic report fields
+    const sumWasteKgInRange = async (start, end) => {
+      const reports = await FieldReport.find({
+        createdAt: { $gte: start, $lte: end },
+      })
+        .select('reportFieldResponses')
+        .lean();
 
-    const kgCur = wasteCur[0]?.kg || 0;
-    const kgPrev = wastePrev[0]?.kg || 0;
-    const wasteCollectedTonnes = Math.round((kgCur / 1000) * 10) / 10;
-    const wasteCollectedLastMonthTonnes = Math.round((kgPrev / 1000) * 10) / 10;
+      let total = 0;
+      reports.forEach((report) => {
+        (report.reportFieldResponses || []).forEach((field) => {
+          const name = (field.fieldName || '').toLowerCase();
+          const isWasteField =
+            name.includes('waste') || name.includes('garbage') || name.includes('trash');
+          if (isWasteField) {
+            const num = parseFloat(field.value);
+            if (!Number.isNaN(num)) total += num;
+          }
+        });
+      });
+      return total;
+    };
+
+    // Helper: count distinct locations covered by completed/active tasks in range
+    const countLocationsCovered = async (start, end) => {
+      const tasks = await Task.find({
+        isDeleted: false,
+        createdAt: { $gte: start, $lte: end },
+      })
+        .select('locationName latitude longitude')
+        .lean();
+
+      const uniqueKeys = new Set(
+        tasks.map(
+          (t) => t.locationName?.trim().toLowerCase() || `${t.latitude},${t.longitude}`
+        )
+      );
+      return uniqueKeys.size;
+    };
+
+    const [
+      kgCurRaw,
+      kgPrevRaw,
+      drivesCur,
+      drivesPrev,
+      verifiedRecs,
+      totalFieldWorkers,
+      locationsCur,
+      locationsPrev,
+    ] = await Promise.all([
+      sumWasteKgInRange(cur.start, cur.end),
+      sumWasteKgInRange(prev.start, prev.end),
+      Task.countDocuments({
+        isDeleted: false,
+        status: 'COMPLETED',
+        createdAt: { $gte: cur.start, $lte: cur.end },
+      }),
+      Task.countDocuments({
+        isDeleted: false,
+        status: 'COMPLETED',
+        createdAt: { $gte: prev.start, $lte: prev.end },
+      }),
+      AttendanceRecord.find({
+        isDeleted: false,
+        status: 'VERIFIED',
+        checkInTime: { $exists: true, $ne: null },
+        checkOutTime: { $exists: true, $ne: null },
+        createdAt: { $gte: cur.start, $lte: cur.end },
+      }).lean(),
+      User.countDocuments({
+        role: ROLES.FIELD_WORKER,
+        isActive: true,
+        isDeleted: false,
+      }),
+      countLocationsCovered(cur.start, cur.end),
+      countLocationsCovered(prev.start, prev.end),
+    ]);
+
+    const kgCur = kgCurRaw || 0;
+    const kgPrev = kgPrevRaw || 0;
+    const wasteCollectedTonnes = Math.round((kgCur / 1000) * 100) / 100;
+    const wasteCollectedLastMonthTonnes = Math.round((kgPrev / 1000) * 100) / 100;
 
     let totalMs = 0;
     for (const r of verifiedRecs) {
@@ -522,6 +548,15 @@ const getImpactMetrics = async (req, res) => {
         drivesCompletedLastMonth: drivesPrev,
         totalFieldHours,
         avgHoursPerWorker,
+
+        // new fields for Impact Hero Strip
+        wasteCollectedKg: Math.round(kgCur * 10) / 10,
+        wasteCollectedLastMonthKg: Math.round(kgPrev * 10) / 10,
+        volunteerHours: totalFieldHours,
+        locationsCovered: locationsCur,
+        locationsCoveredLastMonth: locationsPrev,
+        tasksCompleted: drivesCur,
+        tasksCompletedLastMonth: drivesPrev,
       },
       'Success'
     );
