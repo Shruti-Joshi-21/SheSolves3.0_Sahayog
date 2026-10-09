@@ -657,8 +657,15 @@ function WorkerMatchCard({ worker: w, selected, expanded, onToggle, onExpand }) 
             <span className="inline-flex items-center gap-1 text-xs text-gray-500">
               {ratingCount ? (
                 <>
-                  <Star className="w-3.5 h-3.5 fill-[#F8AC3B] text-[#F8AC3B]" />
-                  {ratingValue} <span className="text-gray-400">({ratingCount})</span>
+                  <span className="inline-flex items-center gap-0.5" title={`${ratingValue} average from ${ratingCount} rating${ratingCount === 1 ? '' : 's'}`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <Star
+                        key={n}
+                        className={`w-3.5 h-3.5 ${n <= Math.round(ratingValue) ? 'fill-[#F8AC3B] text-[#F8AC3B]' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-gray-400">({ratingValue})</span>
                 </>
               ) : (
                 <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">No ratings yet</span>
