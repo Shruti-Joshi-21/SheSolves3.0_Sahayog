@@ -20,7 +20,34 @@ const axios = require('axios');
 const { GoogleGenAI, Type } = require('@google/genai');
 
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+// Used when MODEL is overloaded (503 / 429) — 'off' disables the second attempt
+const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash';
 const DEFAULT_TIMEOUT_MS = 25000;
+const MIN_RETRY_MS = 5000; // don't start a fallback-model attempt with less time than this
+
+const isOverloaded = (err) =>
+  [429, 503].includes(err?.status) || /\b(429|503)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(err?.message || '');
+
+// Tries MODEL, then FALLBACK_MODEL if MODEL is overloaded — all within one shared deadline.
+async function callWithFallback(buildRequest, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  const models = [MODEL];
+  if (FALLBACK_MODEL && FALLBACK_MODEL !== 'off' && FALLBACK_MODEL !== MODEL) models.push(FALLBACK_MODEL);
+
+  let lastErr;
+  for (const model of models) {
+    const remaining = deadline - Date.now();
+    if (model !== MODEL && remaining < MIN_RETRY_MS) break;
+    try {
+      return await withTimeout(getClient().models.generateContent(buildRequest(model)), remaining);
+    } catch (err) {
+      lastErr = err;
+      if (!isOverloaded(err)) break;
+      console.warn(`[ai] ${model} overloaded — ${models.length > 1 && model === MODEL ? `retrying on ${FALLBACK_MODEL}` : 'giving up'}`);
+    }
+  }
+  throw lastErr;
+}
 
 let client = null;
 function getClient() {
@@ -45,9 +72,9 @@ function withTimeout(promise, ms) {
 async function generateJSON({ system, prompt, schema, imageUrls = [], fallback = {}, timeoutMs = DEFAULT_TIMEOUT_MS }) {
   try {
     const imageParts = await Promise.all(imageUrls.slice(0, 5).map(imageUrlToPart));
-    const response = await withTimeout(
-      getClient().models.generateContent({
-        model: MODEL,
+    const response = await callWithFallback(
+      (model) => ({
+        model,
         contents: [{ role: 'user', parts: [...imageParts, { text: prompt }] }],
         config: {
           systemInstruction: system,
@@ -67,9 +94,9 @@ async function generateJSON({ system, prompt, schema, imageUrls = [], fallback =
 
 async function generateText({ system, prompt, fallback = '', timeoutMs = DEFAULT_TIMEOUT_MS }) {
   try {
-    const response = await withTimeout(
-      getClient().models.generateContent({
-        model: MODEL,
+    const response = await callWithFallback(
+      (model) => ({
+        model,
         contents: prompt,
         config: { systemInstruction: system, temperature: 0.4 },
       }),
@@ -82,4 +109,4 @@ async function generateText({ system, prompt, fallback = '', timeoutMs = DEFAULT
   }
 }
 
-module.exports = { generateJSON, generateText, Type, MODEL };
+module.exports = { generateJSON, generateText, Type, MODEL, FALLBACK_MODEL };

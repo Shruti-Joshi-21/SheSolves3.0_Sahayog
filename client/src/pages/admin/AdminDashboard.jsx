@@ -40,9 +40,13 @@ import {
   FileText,
   Menu,
   MapPin,
+  Sparkles,
+  Send,
 } from 'lucide-react';
 import api from '../../utils/api';
 import AdminTaskMap from '../../components/AdminTaskMap';
+import AiReportDocument from '../../components/reports/AiReportDocument.jsx';
+import PrintableReport from '../../components/reports/PrintableReport.jsx';
 import { useAuth } from '../../context/AuthContext';
 import ImpactHeroStrip from '../../components/ImpactHeroStrip';
 
@@ -131,16 +135,14 @@ function ReportsInboxTab({
     }
   };
 
-  const printReport = (report) => {
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(
-      `<html><head><title>Report</title></head><body><h1>${report.submittedBy?.fullName || ''}</h1><p>${report.summary || ''}</p></body></html>`
-    );
-    w.document.close();
-    w.print();
-    w.close();
-  };
+  // Prints the print-only copy rendered by <PrintableReport> below (AI report if there is one)
+  const printReport = () => window.print();
+
+  const reportMeta = (r) => ({
+    workerName: r?.worker?.fullName,
+    workType: r?.workType,
+    locationName: r?.locationName?.split(',').slice(0, 2).join(','),
+  });
 
   return (
     <motion.div
@@ -251,7 +253,23 @@ function ReportsInboxTab({
                         </span>
                         <span className="text-xs text-[#616161]">{report.period}</span>
                       </div>
+                      {report.taskTitle && (
+                        <div className="text-xs text-[#616161] mt-0.5 truncate">
+                          {report.taskTitle}
+                          {report.worker?.fullName ? ` · ${report.worker.fullName}` : ''}
+                        </div>
+                      )}
                       <div className="flex gap-2 mt-1 flex-wrap">
+                        {report.forwardedToAdmin && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.8125rem] font-medium bg-[#F9FBF7] border border-[#E0E7DC] text-[#616161]">
+                            <Send size={12} /> Forwarded
+                          </span>
+                        )}
+                        {report.aiReport && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.8125rem] font-medium bg-[#F1F8E9] text-[#246427]">
+                            <Sparkles size={12} /> AI report
+                          </span>
+                        )}
                         <span className="px-2 py-0.5 rounded-full text-[0.8125rem] font-medium bg-[#E8F5E9] text-[#1B5E20]">
                           Present: {report.presentCount}
                         </span>
@@ -285,6 +303,13 @@ function ReportsInboxTab({
                 <div className="text-xs text-[#9E9E9E] mt-0.5">
                   {selectedReport.period} · {format(new Date(selectedReport.createdAt), 'PP')}
                 </div>
+                {selectedReport.taskTitle && (
+                  <div className="text-xs text-[#616161] mt-1">
+                    {selectedReport.taskTitle}
+                    {selectedReport.workType ? ` · ${selectedReport.workType}` : ''}
+                    {selectedReport.worker?.fullName ? ` · ${selectedReport.worker.fullName}` : ''}
+                  </div>
+                )}
               </div>
               <button type="button" onClick={() => setReportModalOpen(false)}>
                 <X className="w-5 h-5" />
@@ -322,7 +347,56 @@ function ReportsInboxTab({
                   </ul>
                 </div>
               )}
+              {selectedReport.forwardNote && (
+                <div className="mt-4">
+                  <div className="text-xs font-medium text-[#616161] uppercase mb-2 flex items-center gap-1.5">
+                    <Send size={12} /> Team lead&apos;s note
+                    {selectedReport.forwardedAt && (
+                      <span className="normal-case font-normal text-[#9E9E9E]">
+                        · {format(new Date(selectedReport.forwardedAt), 'PP p')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-[#212121] leading-relaxed bg-[#F9FBF7] rounded-[14px] p-4">
+                    {selectedReport.forwardNote}
+                  </div>
+                </div>
+              )}
+              <div className="mt-6">
+                <div className="text-xs font-medium text-[#616161] uppercase mb-2 flex items-center gap-1.5">
+                  <Sparkles size={12} className="text-[#246427]" /> AI Report
+                </div>
+                {selectedReport.aiReport ? (
+                  <AiReportDocument report={selectedReport.aiReport} meta={reportMeta(selectedReport)} />
+                ) : (
+                  <div className="rounded-[14px] border border-dashed border-[#E0E7DC] p-4 text-center text-xs text-[#9E9E9E]">
+                    No AI report yet — the team lead can generate one from Field Reports before forwarding.
+                  </div>
+                )}
+              </div>
             </div>
+            <PrintableReport
+              heading={`Sahayog · Field report · ${selectedReport.submittedBy?.fullName || ''}${
+                selectedReport.taskTitle ? ` · ${selectedReport.taskTitle}` : ''
+              }`}
+            >
+              {selectedReport.aiReport ? (
+                <AiReportDocument report={selectedReport.aiReport} meta={reportMeta(selectedReport)} />
+              ) : (
+                <div className="ai-report-doc space-y-3">
+                  <h3 className="text-lg font-semibold text-[#1a4a1a]">{selectedReport.taskTitle || 'Field report'}</h3>
+                  <p className="text-xs text-[#757575]">
+                    {selectedReport.period} · {format(new Date(selectedReport.createdAt), 'PP')}
+                  </p>
+                  <p className="text-sm leading-relaxed text-[#424242]">{selectedReport.summary}</p>
+                  {selectedReport.forwardNote && (
+                    <p className="text-sm leading-relaxed text-[#424242]">
+                      <strong>Team lead&apos;s note:</strong> {selectedReport.forwardNote}
+                    </p>
+                  )}
+                </div>
+              )}
+            </PrintableReport>
             <div className="p-6 border-t border-[#E0E7DC] flex justify-between">
               {!selectedReport.isRead && (
                 <button
@@ -347,10 +421,10 @@ function ReportsInboxTab({
               )}
               <button
                 type="button"
-                onClick={() => printReport(selectedReport)}
+                onClick={printReport}
                 className="ml-auto bg-[#246427] text-white rounded-[10px] px-4 py-2 text-sm flex items-center gap-2"
               >
-                <Download size={16} /> Download PDF
+                <Download size={16} /> Print / Save as PDF
               </button>
             </div>
           </div>
