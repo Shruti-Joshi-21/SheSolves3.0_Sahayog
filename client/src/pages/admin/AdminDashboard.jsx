@@ -39,10 +39,12 @@ import {
   ChevronRight,
   FileText,
   Menu,
+  MapPin,
 } from 'lucide-react';
 import api from '../../utils/api';
 import AdminTaskMap from '../../components/AdminTaskMap';
 import { useAuth } from '../../context/AuthContext';
+import ImpactHeroStrip from '../../components/ImpactHeroStrip';
 
 ChartJS.register(
   CategoryScale,
@@ -1571,7 +1573,7 @@ const AdminDashboard = () => {
             : 'Leave Overview';
 
   const navTabs = [
-    { id: TAB_OVERVIEW, icon: LayoutDashboard, label: 'Overview' },
+    { id: TAB_OVERVIEW, icon: LayoutDashboard, label: 'Impact Dashboard' },
     { id: TAB_USERS, icon: Users, label: 'User Management' },
     { id: TAB_REPORTS, icon: Inbox, label: 'Reports Inbox' },
     { id: TAB_ANALYTICS, icon: BarChart2, label: 'Attendance Analytics' },
@@ -1701,6 +1703,7 @@ const AdminDashboard = () => {
             <div className="pt-[8px] px-[24px] pb-[24px]">
           {activeTab === TAB_OVERVIEW && (
             <>
+          <ImpactHeroStrip impactMetrics={impactMetrics} loading={loadImpact} />
           {/* KPI row */}
           <motion.div {...sectionMotion(0)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-[16px] mb-[16px]">
             {[
@@ -1944,7 +1947,7 @@ const AdminDashboard = () => {
           </motion.div>
 
           {/* Impact metrics */}
-          <motion.div {...sectionMotion(3)} className="grid grid-cols-1 sm:grid-cols-3 gap-[16px] mb-[16px]">
+          <motion.div {...sectionMotion(3)} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] mb-[16px]">
             {[
               {
                 key: 'waste',
@@ -1987,6 +1990,26 @@ const AdminDashboard = () => {
                 ) : null,
               },
               {
+                key: 'hours',
+                label: 'Total field hours',
+                icon: Clock,
+                iconBg: 'bg-[#F9F3E0]',
+                iconColor: '#5D4E00',
+                loading: loadImpact,
+                error: errImpact,
+                onRetry: fetchImpact,
+                content: impactMetrics ? (
+                  <>
+                    <div className="text-[1.75rem] font-[700] text-[#212121] mb-[6px]">
+                      {impactMetrics.totalFieldHours.toLocaleString()}
+                    </div>
+                    <div className="text-[0.8125rem] text-[#616161]">
+                      Avg {impactMetrics.avgHoursPerWorker} hrs/worker
+                    </div>
+                  </>
+                ) : null,
+              },
+                            {
                 key: 'hours',
                 label: 'Total field hours',
                 icon: Clock,
