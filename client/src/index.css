@@ -102,3 +102,29 @@ select:focus {
 .Toastify__toast-body {
     font-weight: 500 !important;
 }
+
+/* ===== Google Translate: hide default UI ===== */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-icon,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight {
+    display: none !important;
+    background: none !important;
+    box-shadow: none !important;
+}
+
+body {
+    top: 0px !important;
+}
+
+.skiptranslate iframe {
+    visibility: hidden !important;
+    height: 0 !important;
+}
+
+#google_translate_element {
+    display: none !important;
+}

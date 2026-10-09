@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import RegisterModal from '../components/RegisterModal';
 import LoginModal from '../components/LoginModal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import MicButton from '../components/MicButton';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -97,6 +99,8 @@ export default function LandingPage() {
               Contact
               <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#F8AC3B] transition-all group-hover:w-full"></span>
             </a>
+            <LanguageSwitcher />
+             <MicButton />
           </div>
         </div>
       </nav>
