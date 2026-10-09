@@ -43,4 +43,11 @@ router.get('/system-alerts', ...adminOnly, adminController.getSystemAlerts);
 
 router.get('/map-data', ...adminOnly, getMapData);
 
+router.get(
+  '/attendance/anomalies',
+  verifyToken,
+  authorizeRoles(ROLES.ADMIN, ROLES.TEAM_LEAD),
+  adminController.getAttendanceAnomalies
+);
+
 module.exports = router;

@@ -10,6 +10,8 @@ const Notification = require('../models/Notification');
 const { getDistanceInMeters } = require('../utils/haversine');
 const { sendSuccess, sendError } = require('../utils/response');
 const { ROLES } = require('../utils/constants');
+const { computeConfidence, gatherTrustContext } = require('../services/attendanceTrust.service');
+const { checkLiveness } = require('../services/ai/liveness');
 
 const TOTAL_LEAVES_PER_YEAR = 12;
 const WORKER_LEAVE_TYPES = ['SICK', 'CASUAL', 'EMERGENCY', 'OTHER'];
@@ -347,12 +349,16 @@ async function verifyFaceWithPythonService(faceImageUrl, userId) {
       maxContentLength: Infinity,
     });
     const match = resp.data?.match === true || resp.data?.match === 'true';
+    // distance is only meaningful for a real comparison (mock/error responses send 0.0 with a reason)
+    const rawDistance = Number(resp.data?.distance);
+    const compared = !resp.data?.mock && !resp.data?.reason && Number.isFinite(rawDistance);
+    const distance = compared ? rawDistance : null;
     if (!match) {
-      return { faceValid: false, reason: 'Face did not match registered photo' };
+      return { faceValid: false, reason: 'Face did not match registered photo', distance, available: compared };
     }
-    return { faceValid: true, reason: '' };
+    return { faceValid: true, reason: '', distance, available: compared };
   } catch (err) {
-    return { faceValid: false, reason: 'Face verification service unavailable' };
+    return { faceValid: false, reason: 'Face verification service unavailable', distance: null, available: false };
   }
 }
 
@@ -360,6 +366,55 @@ async function verifyFaceWithPythonService(faceImageUrl, userId) {
 function getFieldImageUrl(file) {
   if (!file) return '';
   return file.path || '';
+}
+
+// Optional client signals sent with check-in/out (Challenge 3)
+function readTrustFields(req) {
+  return {
+    livenessAction: String(firstFormScalar(req.body.livenessAction) || '').trim().slice(0, 60),
+    deviceId: String(firstFormScalar(req.body.deviceId) || '').trim().slice(0, 100),
+    userAgent: String(firstFormScalar(req.body.userAgent) || req.headers['user-agent'] || '').slice(0, 400),
+    livenessFrameUrl: getFieldImageUrl(req.files?.livenessFrame?.[0]),
+  };
+}
+
+/**
+ * Builds the attendance trust score for one phase (check-in or check-out).
+ * prevPoint overrides the "last known location" (check-out compares against its own check-in).
+ */
+async function scoreAttendancePhase({ livenessPromise, workerId, excludeRecordId, prevPoint, faceResult, faceUrl, trustFields, geofence, timing, current }) {
+  const [ctx, livenessResult] = await Promise.all([
+    gatherTrustContext({ workerId, deviceId: trustFields.deviceId, excludeRecordId }),
+    livenessPromise,
+  ]);
+  const liveness = {
+    passed: livenessResult.livenessPassed,
+    spoofSuspected: !!livenessResult.spoofSuspected,
+    confidence: livenessResult.confidence,
+    reason: livenessResult.reason,
+    action: trustFields.livenessAction,
+    source: livenessResult.source,
+  };
+  const trust = computeConfidence({
+    face: { available: faceResult.available, distance: faceResult.distance, matched: faceResult.faceValid },
+    liveness,
+    geofence,
+    timing,
+    device: { deviceId: trustFields.deviceId, ...ctx },
+    travel: { prev: prevPoint || ctx.prevPoint, current },
+  });
+  trust.signals.liveness.source = liveness.source; // 'ai' → UI shows an "AI" tag
+  if (faceUrl || trustFields.livenessFrameUrl) {
+    trust.signals.liveness.frames = [faceUrl, trustFields.livenessFrameUrl].filter(Boolean);
+  }
+  return { trust, liveness };
+}
+
+// Adds the trust reasons to flagReasons (deduped) when the score is SUSPICIOUS
+function mergeTrustFlags(flagReasons, trust) {
+  if (trust.band !== 'SUSPICIOUS') return flagReasons;
+  const merged = [...flagReasons, `Low attendance trust score (${trust.score}/100)`, ...trust.reasons];
+  return [...new Set(merged.map((r) => String(r).trim()).filter(Boolean))];
 }
 
 async function checkIn(req, res, next) {
@@ -431,14 +486,33 @@ async function checkIn(req, res, next) {
     }
 
     // faceFile.path is the Cloudinary https:// URL after upload
+    // Liveness (Gemini) runs alongside face verification so check-in/out is not twice as slow
+    const trustFields = readTrustFields(req);
+    const livenessPromise = checkLiveness({
+      frame1Url: faceFile.path,
+      frame2Url: trustFields.livenessFrameUrl,
+      action: trustFields.livenessAction,
+    });
     const faceResult = await verifyFaceWithPythonService(faceFile.path, workerId);
     const faceValid = faceResult.faceValid;
     const faceReason = faceResult.reason;
 
-    const flagReasons = [];
-    if (!timeValid) flagReasons.push(timeReason);
-    if (!locationValid) flagReasons.push(locationReason);
-    if (!faceValid) flagReasons.push(faceReason);
+    const baseFlags = [];
+    if (!timeValid) baseFlags.push(timeReason);
+    if (!locationValid) baseFlags.push(locationReason);
+    if (!faceValid) baseFlags.push(faceReason);
+
+    const { trust, liveness } = await scoreAttendancePhase({
+      livenessPromise,
+      workerId: oid,
+      faceResult,
+      faceUrl: faceFile.path,
+      trustFields,
+      geofence: { distanceM: distance, radiusM: task.allowedRadius },
+      timing: { timeValid },
+      current: { latitude: lat, longitude: lon, time: now },
+    });
+    const flagReasons = mergeTrustFlags(baseFlags, trust);
 
     const status = flagReasons.length > 0 ? 'FLAGGED' : 'PENDING';
     const beforeUrl = getFieldImageUrl(fieldFile);
@@ -452,6 +526,17 @@ async function checkIn(req, res, next) {
       beforeImage: beforeUrl,
       status,
       flagReasons,
+      confidenceScore: trust.score,
+      confidenceBand: trust.band,
+      confidenceSignals: {
+        ...trust.signals,
+        _meta: { phase: 'CHECK_IN', reasons: trust.reasons, checkIn: { score: trust.score, band: trust.band } },
+      },
+      faceDistance: faceResult.distance,
+      livenessPassed: liveness.passed,
+      livenessAction: trustFields.livenessAction,
+      deviceId: trustFields.deviceId,
+      userAgent: trustFields.userAgent,
     });
 
     if (status === 'FLAGGED') {
@@ -485,6 +570,7 @@ async function checkIn(req, res, next) {
         status,
         flagReasons,
         checkInTime: record.checkInTime,
+        confidence: { score: trust.score, band: trust.band, signals: trust.signals, reasons: trust.reasons },
         message,
       },
       message
@@ -564,6 +650,13 @@ async function checkOut(req, res, next) {
     }
 
     // faceFile.path is the Cloudinary https:// URL after upload
+    // Liveness (Gemini) runs alongside face verification so check-in/out is not twice as slow
+    const trustFields = readTrustFields(req);
+    const livenessPromise = checkLiveness({
+      frame1Url: faceFile.path,
+      frame2Url: trustFields.livenessFrameUrl,
+      action: trustFields.livenessAction,
+    });
     const faceResult = await verifyFaceWithPythonService(faceFile.path, workerId);
     const faceValid = faceResult.faceValid;
     const faceReason = faceResult.reason;
@@ -578,10 +671,44 @@ async function checkOut(req, res, next) {
     if (!faceValid) newFlagReasons.push(faceReason);
     if (isEarly) newFlagReasons.push(`Early checkout (${earlyMins}m early)`);
 
+    const { trust, liveness } = await scoreAttendancePhase({
+      livenessPromise,
+      workerId: oid,
+      excludeRecordId: record._id,
+      prevPoint: record.checkInLocation?.latitude != null
+        ? {
+            latitude: record.checkInLocation.latitude,
+            longitude: record.checkInLocation.longitude,
+            time: record.checkInTime,
+          }
+        : null,
+      faceResult,
+      faceUrl: faceFile.path,
+      trustFields,
+      geofence: { distanceM: distance, radiusM: task.allowedRadius },
+      timing: { timeValid, isEarly, earlyMinutes: earlyMins },
+      current: { latitude: lat, longitude: lon, time: now },
+    });
+
+    // The record keeps the weaker of the two phases, so a clean check-out can't hide a bad check-in
+    const checkInTrust = record.confidenceScore != null
+      ? { score: record.confidenceScore, band: record.confidenceBand }
+      : null;
+    const checkOutTrust = { score: trust.score, band: trust.band };
+    const useCheckIn = checkInTrust && checkInTrust.score < trust.score;
+    const finalTrust = useCheckIn
+      ? {
+          score: checkInTrust.score,
+          band: checkInTrust.band,
+          signals: Object.fromEntries(Object.entries(record.confidenceSignals || {}).filter(([k]) => k !== '_meta')),
+          reasons: record.confidenceSignals?._meta?.reasons || [],
+        }
+      : trust;
+
     const existingFlags = Array.isArray(record.flagReasons)
       ? record.flagReasons.map((r) => String(r).trim()).filter(Boolean)
       : [];
-    const allFlags = [...existingFlags, ...newFlagReasons];
+    const allFlags = mergeTrustFlags([...existingFlags, ...newFlagReasons], trust);
     const finalStatus = allFlags.length === 0 ? 'VERIFIED' : 'FLAGGED';
 
     const afterImageUrl = getFieldImageUrl(fieldFile);
@@ -604,6 +731,27 @@ async function checkOut(req, res, next) {
           earlyCheckoutReason: earlyReason,
           earlyCheckoutMinutes: earlyMins,
           tlApprovalStatus: isEarly ? 'PENDING' : 'APPROVED',
+          confidenceScore: finalTrust.score,
+          confidenceBand: finalTrust.band,
+          confidenceSignals: {
+            ...finalTrust.signals,
+            _meta: {
+              phase: useCheckIn ? 'CHECK_IN' : 'CHECK_OUT',
+              reasons: finalTrust.reasons,
+              checkIn: checkInTrust,
+              checkOut: checkOutTrust,
+            },
+          },
+          // faceDistance / livenessPassed keep the worse of the two phases
+          faceDistance: [record.faceDistance, faceResult.distance].some((d) => d != null)
+            ? Math.max(...[record.faceDistance, faceResult.distance].filter((d) => d != null))
+            : null,
+          livenessPassed: record.livenessPassed === false || liveness.passed === false
+            ? false
+            : (liveness.passed ?? record.livenessPassed),
+          livenessAction: trustFields.livenessAction || record.livenessAction,
+          deviceId: record.deviceId || trustFields.deviceId,
+          userAgent: record.userAgent || trustFields.userAgent,
         },
       },
       { new: true, runValidators: true }
@@ -663,6 +811,7 @@ async function checkOut(req, res, next) {
         flagReasons: allFlags,
         checkInTime: updated.checkInTime,
         checkOutTime: updated.checkOutTime,
+        confidence: { score: finalTrust.score, band: finalTrust.band, signals: finalTrust.signals, reasons: finalTrust.reasons },
         message,
       },
       message

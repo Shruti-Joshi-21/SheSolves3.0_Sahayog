@@ -17,7 +17,13 @@ Success: `{ success: true, message, data }` · Error: `{ success: false, message
 ## New endpoints (Round 3) — add a row BEFORE building; Status: planned → mock → live
 | Method | Path | Roles | Request | `data` returned | Owner lane | Status |
 |---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |
+| POST | `/api/worker/checkin` (extended) | FIELD_WORKER | existing multipart + optional `livenessFrame` (2nd face image), `livenessAction` (e.g. "Blink twice"), `deviceId` (localStorage `sahayog_device_id`), `userAgent` | existing fields + `confidence: { score 0–100, band, signals, reasons[] }` | api | live |
+| POST | `/api/worker/checkout` (extended) | FIELD_WORKER | same optional fields as checkin | existing fields + `confidence` (the weaker of check-in / check-out) | api | live |
+| GET | `/api/admin/attendance/anomalies?band=&limit=` | ADMIN, TEAM_LEAD (own tasks only) | `band` = TRUSTED / REVIEW / SUSPICIOUS (optional), `limit` default 50, max 200 | `{ records: [AttendanceRecord + populated worker{fullName,username}, task{title,workType,locationName,date,startTime,endTime,allowedRadius}], counts: { TRUSTED, REVIEW, SUSPICIOUS } }` sorted by lowest `confidenceScore` | api | live |
+
+**Attendance trust score (Challenge 3).** Weights: face 30 · liveness 20 · geofence 20 · timing 10 · device 10 · travel (location jump) 10.
+Bands: ≥80 `TRUSTED`, 50–79 `REVIEW`, <50 `SUSPICIOUS` (SUSPICIOUS also sets `status: FLAGGED` and adds the reasons to `flagReasons` — flag, never block).
+`confidenceSignals` shape: `{ face|liveness|geofence|timing|device|travel: { score /*points earned*/, weight, detail }, _meta: { phase, reasons[], checkIn{score,band}, checkOut{score,band} } }` — UI draws bars as `score / weight` and skips `_meta`. `signals.liveness.frames` = [frame1Url, frame2Url] when sent.
 
 ## Model changes (Round 3) — additive only
 | Model | New field | Type / default | Why |
